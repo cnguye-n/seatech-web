@@ -1,0 +1,98 @@
+/* ===============================
+   GLOBAL STYLES — SEAtech Web Mobile-first + responsive base
+   THIS IS DEFAULT STYLE JUST TO GET STARTED
+   WE CAN CHANGE IT 
+   =============================== */
+
+/* RESET / NORMALIZE */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ROOT VARIABLES (can link to variables.css later) */
+:root {
+  --font-main: 'Inter', 'Segoe UI', sans-serif;
+  --bg-color: #ffffff;
+  --text-color: #1a1a1a;
+  --accent-color: #0077b6;
+  --max-width: 1200px;
+}
+
+/* GLOBAL ELEMENTS */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  line-height: 1.6;
+  font-size: 16px;
+  overflow-x: hidden;
+}
+
+/* CONTAINERS / UTILITIES */
+.container {
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Links + buttons */
+a {
+  text-decoration: none;
+  color: var(--accent-color);
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background-color: var(--accent-color);
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #005f8e;
+}
+
+/* TYPOGRAPHY */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+p {
+  margin-bottom: 1rem;
+}
+
+/* RESPONSIVE BREAKPOINTS (mobile-first) */
+@media (min-width: 768px) {
+  body {
+    font-size: 17px;
+  }
+  .container {
+    padding: 0 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  body {
+    font-size: 18px;
+  }
+  .container {
+    padding: 0 3rem;
+  }
+}
