@@ -1,51 +1,56 @@
-// src/pages/homepage.tsx
-import React from 'react';
-import '../styles/pages/homepage.css'; // page-specific styles
+import React from "react";
+import "../styles/pages/homepage.css";
 
 export default function Homepage() {
   return (
     <div className="homepage">
-      {/* ===== HERO SECTION ===== */}
+      {/* ===== 1) HERO ===== */}
       <section className="section hero">
-        <div className="container hero-content">
-          <p className="heading1">Sign In</p>
-          <p className="bodytext">
-            We prioritize tagging sea turtles to gather vital data for conservation.
-          </p>
+        <div className="hero-overlay">
+          <div className="container hero-content">
+            <p className="heading1">Sign In</p>
+            <p className="bodytext">
+              We prioritize tagging sea turtles to gather vital data for conservation.
+            </p>
+          </div>
         </div>
       </section>
 
-      {/* ===== GALLERY SECTION ===== */}
+      {/* ===== 2) GALLERY ===== THIS NEEDS WORK*/}
       <section className="section gallery">
         <div className="container">
           <p className="heading2 mb-4">Gallery</p>
-          <div className="card">
-            <img
-              src="/images/turtle-gallery.jpg"
-              alt="Sea turtle swimming in coral reef"
-              className="gallery-image"
-            />
-            <p className="bodytext">Join us in our mission to protect sea turtles in Colombia.</p>
+          {/* <Gallery images={...} />  ← plug in when you’re ready */}
+          <div className="card demo-card">
+            <p className="bodytext">[Gallery goes here]</p>
           </div>
         </div>
       </section>
 
-      {/* ===== ISLAND GRID SECTION ===== */}
+      {/* ===== 3) ISLANDS (background image + 6 white squares) ===== */}
       <section className="section islands">
-        <div className="container">
-          <p className="heading2 mb-6">Research Islands</p>
-          <div className="island-grid">
-            <div className="card">Island 1</div>
-            <div className="card">Island 2</div>
-            <div className="card">Island 3</div>
-            <div className="card">Island 4</div>
-            <div className="card">Island 5</div>
-            <div className="card">Island 6</div>
+        <div className="islands-bg">
+          <div className="container">
+            <div className="islands-header">
+              <p className="heading2">Research Islands</p>
+              <p className="bodytext dim">
+                Six sites used as collection/observation areas.
+              </p>
+            </div>
+
+            <div className="islands-grid">
+              {["Island 1","Island 2","Island 3","Island 4","Island 5","Island 6"].map(name => (
+                <div key={name} className="island-tile">
+                  <div className="island-icon">🧭</div>
+                  <span className="island-label">{name}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ===== INFO SECTION ===== */}
+      {/* ===== 4) INFO CARDS (optional, like Nicepage) ===== */}
       <section className="section info">
         <div className="container info-grid">
           <div className="card">
@@ -64,19 +69,6 @@ export default function Homepage() {
             <p className="heading3">Island 2</p>
             <p className="bodytext">Navigation and exploration of sea turtle habitats.</p>
           </div>
-        </div>
-      </section>
-
-      {/* ===== CONTACT SECTION ===== */}
-      <section className="section contact">
-        <div className="container contact-form">
-          <p className="heading2">Contact Us</p>
-          <form className="card">
-            <input type="text" placeholder="Name" />
-            <input type="email" placeholder="Email" />
-            <textarea placeholder="Message" rows={4}></textarea>
-            <button className="btn" type="submit">Send Message</button>
-          </form>
         </div>
       </section>
     </div>

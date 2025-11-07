@@ -1,0 +1,87 @@
+/* Container looks like Nicepage card */
+.gallery {
+  background: var(--color-darkgrey);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  padding: 0; /* viewport is edge-to-edge */
+}
+
+/* Viewport keeps the image ratio (16/9 by default) */
+.gallery-viewport {
+  position: relative;
+  width: 100%;
+  background: #000; /* subtle letterbox while loading */
+}
+
+/* Image fills the viewport like Nicepage */
+.gallery-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Arrows (circular, translucent, “pop” on hover) */
+.gallery-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-size: 28px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform .15s ease, background .15s ease;
+}
+.gallery-arrow:hover { transform: translateY(-50%) scale(1.06); background: rgba(255,255,255,0.26); }
+.gallery-arrow.left  { left: 12px; }
+.gallery-arrow.right { right: 12px; }
+
+/* Counter: 2/5 at bottom center */
+.gallery-counter {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+}
+
+/* Caption area below like Nicepage title/subtitle */
+.gallery-caption {
+  padding: var(--space-4) var(--space-6) var(--space-6);
+  text-align: center;
+}
+.gallery-caption .heading3 {
+  margin-bottom: var(--space-2);
+}
+.gallery-caption-text {
+  color: var(--color-text-dim);
+}
+
+/* Responsive tweaks (mobile) */
+@media (max-width: 768px) {
+  .gallery-arrow {
+    width: 40px; height: 40px; font-size: 24px;
+  }
+  .gallery-counter {
+    font-size: 0.85rem;
+    bottom: 8px;
+  }
+  .gallery-caption {
+    padding: var(--space-4);
+  }
+}

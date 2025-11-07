@@ -75,7 +75,7 @@
   /* ===== Neutral colors ===== */
   --color-black: #000000;           /* true black (navbar, background) */
   --color-darkgrey: #1b1b1b;        /* card / section surface */
-  --color-grey: #2b2b2b;            /* panels, dividers */
+  --color-grey: #2b2b2bcf;            /* panels, dividers */
   --color-white: #ffffff;
 
   /* ===== Text colors ===== */

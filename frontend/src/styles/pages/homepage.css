@@ -1,66 +1,108 @@
-/* src/styles/pages/homepage.css */
-
-/* ==== HERO ==== */
+/* ============ HERO ============ */
+/* Full-bleed hero image like Nicepage */
 .hero {
-  background: url('/images/darkturtle.jpg') center/cover no-repeat;
+  padding: 0;                     /* background handles spacing */
+}
+.hero-overlay {
+  background: url("/images/hero-turtle.jpg") center/cover no-repeat;
+}
+.hero-overlay::after {            /* subtle dark overlay for text readability */
+  content: "";
+  display: block;
+  background: linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.45));
+}
+.hero-content {
   text-align: center;
   color: var(--color-white);
-  padding-block: var(--space-12);
+  padding-block: clamp(64px, 12vw, 160px);
+}
+.hero .heading1 { margin-bottom: var(--space-3); }
+
+/* ============ GALLERY ============ */
+.gallery {
+  background: var(--color-grey); /* light grey background */
 }
 
-/* ==== GALLERY ==== */
-.gallery .gallery-image {
-  width: 100%;
-  border-radius: var(--radius);
-  margin-bottom: var(--space-4);
+.gallery .container {
+  padding-block: clamp(48px, 8vw, 100px);
 }
 
-/* ==== ISLAND GRID ==== */
-.island-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: var(--space-4);
+.gallery .heading2 {
+  color: white; /* dark text for contrast */
+}
+
+.gallery .demo-card {
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  padding: var(--space-6);
+  max-width: 900px;
+  margin-inline: auto;
   text-align: center;
 }
-.island-grid .card {
-  background: var(--color-darkgrey);
+
+/* ============ ISLANDS SECTION (background image + 6 squares) ============ */
+.islands { padding: 0; }          /* we want the bg to control spacing */
+.islands-bg {
+  background: url("/images/sanandres.jpeg") center/cover no-repeat;
+  position: relative;
+}
+.islands-bg::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.25);
+}
+.islands .container {
+  position: relative;             /* sit above overlay */
+  padding-block: clamp(48px, 10vw, 120px);
 }
 
-/* ==== INFO SECTION ==== */
+.islands-header { text-align: center; margin-bottom: var(--space-8); }
+.islands-header .dim { color: var(--color-text-dim); }
+
+/* 6 white tiles on top of background image */
+.islands-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(16px, 3vw, 28px);
+  max-width: 900px;
+  margin-inline: auto;
+}
+.island-tile {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1 / 1;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #d1656f;                 /* Nicepage-ish muted red for icon */
+  box-shadow: 0 8px 24px rgba(0,0,0,.18);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.island-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0,0,0,.22);
+}
+.island-icon {
+  font-size: clamp(26px, 3vw, 34px);
+  margin-bottom: 6px;
+}
+.island-label {
+  color: #b04851;                 /* label under icon, Nicepage vibe */
+  font-weight: 600;
+  letter-spacing: .4px;
+}
+
+/* Responsive: stack 2 columns then 1 */
+@media (max-width: 900px) {
+  .islands-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 520px) {
+  .islands-grid { grid-template-columns: 1fr; max-width: 420px; }
+}
+
+/* ============ INFO CARDS (optional) ============ */
 .info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: var(--space-6);
-}
-
-/* ==== CONTACT SECTION ==== */
-.contact-form form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-6);
-}
-.contact-form input,
-.contact-form textarea {
-  background: var(--color-darkgrey);
-  border: 1px solid var(--color-border);
-  color: var(--color-text);
-  border-radius: var(--radius);
-  padding: 0.75rem 1rem;
-}
-.contact-form input:focus,
-.contact-form textarea:focus {
-  outline: none;
-  border-color: var(--color-primary);
-}
-
-/* Make spacing tighter on mobile */
-@media (max-width: 768px) {
-  .hero {
-    padding-block: var(--space-8);
-  }
-  .gallery .card,
-  .contact-form form {
-    padding: var(--space-4);
-  }
 }
