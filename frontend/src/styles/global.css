@@ -312,3 +312,46 @@ code, pre {
     --container-pad: 2rem;
   }
 }
+
+/* =========================================
+   Scroll Reveal (Nicepage-style)
+   ========================================= */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* base: hidden by default */
+  .reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity .6s ease, transform .6s ease;
+    will-change: opacity, transform;
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* variants */
+  .reveal.fade-in   { transform: none; }
+  .reveal.fade-right{ transform: translateX(-16px); }
+  .reveal.fade-left { transform: translateX(16px); }
+
+  /* a bit slower for side slides */
+  .reveal.fade-right,
+  .reveal.fade-left { transition-duration: .7s; }
+
+  /* scale-in (subtle zoom + rise) */
+  .reveal.scale-in {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+    transition: opacity .6s ease, transform .6s ease;
+  }
+  .reveal.scale-in.is-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* If user prefers reduced motion: just show */
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1 !important; transform: none !important; }
+}
