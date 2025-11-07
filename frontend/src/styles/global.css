@@ -314,7 +314,8 @@ code, pre {
 }
 
 /* =========================================
-   Scroll Reveal (Nicepage-style)
+   Scroll Reveal (Nicepage-style) 
+   Reveal.tsx uses this section for scroll animations
    ========================================= */
 
 @media (prefers-reduced-motion: no-preference) {
