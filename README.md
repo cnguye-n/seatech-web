@@ -17,6 +17,7 @@ Senior Capstone Project
 ```bash
 git clone https://github.com/cnguye-n/seatech-web.git
 cd seatech-web
+```
 
 ### 2. Install Node.js LTS or use the right Node version (20.19.2)
 - Go to [https://nodejs.org/en/download](https://nodejs.org/en/download)
@@ -24,14 +25,16 @@ cd seatech-web
 - Choose the **LTS version** (recommended for stability). LTS stands for long term support
 - Node.js comes with **npm** pre-installed.
 - Verify installation:
-  ```bash
+```bash
   node -v
   npm -v
+```
 
 -if you already have node.js you can do
-  ```bash
+```bash
 nvm install 20.19.2
 nvm use 20.19.2
+```
 
 node -v should have v20.19.2
 npm -v should have 10.8.x or any compatible (I have 10.8.2 but you can have like 10.8.5)
@@ -42,9 +45,9 @@ Note: concurrently allows you to run both the frontend and backend servers at th
 Install it in the root folder:
 ```bash
 npm install concurrently --save-dev
+```
 
-
-Then make sure your root package.json has this inside:
+Then make sure your package.json IN THE ROOT FOLDER has this inside:
 ```bash
 {
   "name": "seatech-web",
@@ -59,6 +62,7 @@ Then make sure your root package.json has this inside:
     "concurrently": "^8.2.2"
   }
 }
+```
 
 What this means:
 --prefix frontend → runs the frontend React app inside the /frontend folder
@@ -67,25 +71,39 @@ Both start together when you type npm run dev
 
 
 ### 4. Install Frontend Dependencies
+```bash
 cd frontend
 npm install
+```
 NOTE: do not run npm create vite... (the frontend/ app already exists in the repo)
 
 
-INSTRUCTIONS FOR RUNNING
-from the root directly do
+### INSTRUCTIONS FOR RUNNING
+From the root, type the command below to run the app
+```bash
 npm run dev 
-
+``` 
 This will:
 Start the frontend (Vite React app) on http://localhost:5173
 Start the backend (Flask or Node API) on http://localhost:5000
 
- Common Commands
-Command	Description
-npm run dev	Run both frontend and backend concurrently
-npm run frontend	Run only the frontend
-npm run backend	Run only the backend
-cd frontend && npm run build	Build production-ready frontend
+### Common Commands
+**Run both frontend and backend concurrently**
+```bash
+npm run dev
+```
+**Run only the frontend**
+```bash
+npm run frontend
+```
+**Run only the backend**
+```bash
+npm run backend
+```
+**Build production-ready frontend**
+```bash
+cd frontend && npm run build
+```
 
 
 
