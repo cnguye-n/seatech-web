@@ -26,6 +26,44 @@
    ----------------------------------------------------------------
 */
 
+/*
+   ----------------------------------------------------------------
+   🧩 LAYOUT CHEAT SHEET — .section and .container
+
+   Each page inside `.app` follows this pattern:
+
+   +------------------------------------------------------------+
+   | .app  (the whole page)                                     |
+   |                                                            |
+   |  +------------------------------------------------------+  |
+   |  | .section  (one vertical block of content)            |  |
+   |  |  Adds top & bottom spacing between sections.         |  |
+   |  |  Often has background color or image.                |  |
+   |  |                                                      |  |
+   |  |   +----------------------------------------------+   |  |
+   |  |   | .container  (content wrapper)                |   |  |
+   |  |   |   Centers and limits content width           |   |  |
+   |  |   |   Adds side padding on small screens         |   |  |
+   |  |   |                                              |   |  |
+   |  |   |   <p class="heading1">Title</p>              |   |  |
+   |  |   |   <p class="bodytext">Paragraph text...</p>  |   |  |
+   |  |   +----------------------------------------------+   |  |
+   |  |                                                      |  |
+   |  +------------------------------------------------------+  |
+   |                                                            |
+   |  (repeat more .section blocks as needed)                   |
+   |                                                            |
+   +------------------------------------------------------------+
+
+   SUMMARY:
+   - `.app` → wraps the entire page (navbar, main, footer). the app container has the navbar and footer
+              inside of it already too so when you make a new page you only need to add sections inside main, so
+              you don't have to include code for navbar/footer on every page.
+   - `.section` → defines one full-width horizontal band
+   - `.container` → centers and limits the width of content inside a section
+   ----------------------------------------------------------------
+*/
+
 /* ----------------------------------------------------------
    1) DESIGN TOKENS
    ---------------------------------------------------------- */

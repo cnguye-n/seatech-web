@@ -1,0 +1,21 @@
+/* src/components/Footer/Footer.css */
+
+.footer {
+  background: var(--color-black);
+  color: var(--color-text);
+  border-top: 1px solid var(--color-border);
+}
+
+.footer-inner {
+  min-height: 64px;               /* fixed-ish height the layout expects */
+  display: flex;
+  align-items: center;
+  justify-content: center;         /* center text; swap to space-between if you add links */
+  padding-block: var(--space-4);   /* extra breathing room on small screens */
+}
+
+.footer-text {
+  margin: 0;
+  color: var(--color-text-dim);
+  font-size: 0.95rem;
+}

@@ -1,20 +1,18 @@
-import React from 'react';
+// src/App.tsx
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import AppContainer from './layout/AppContainer';
 import Homepage from './pages/homepage';
 
-import './styles/global.css'
-import './styles/variables.css'
-
-
-function App() {
+export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Homepage />} />
-        {/* other routes */}
-      </Routes>
+      <AppContainer>
+        <Routes>
+          <Route path="/" element={<Homepage />} />
+          {/* more routes here */}
+        </Routes>
+      </AppContainer>
     </BrowserRouter>
   );
 }
 
-export default App

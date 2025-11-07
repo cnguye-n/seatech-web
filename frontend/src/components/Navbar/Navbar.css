@@ -1,0 +1,134 @@
+/* ===== Bar & container (match Nicepage spacing) ===== */
+.navbar {
+  background: #0b0b0b; /* deep black like Nicepage header */
+  color: var(--color-white);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.nav-inner {
+  width: 100%;
+  height: 64px;                 /* Nicepage-like height */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+   /* dynamic left/right padding so content isn’t glued to the edges */
+  padding-inline: clamp(16px, 3vw, 48px);
+}
+
+/* ===== Logo ===== */
+.nav-logo {
+  color: var(--color-white);
+  font-weight: 600;
+  letter-spacing: .5px;
+  text-decoration: none;
+}
+
+/* ===== Menu row ===== */
+ /* gets rid of the bullet points */
+.nav-menu,
+.dropdown-menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-menu {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;                      /* small gap between items */
+  margin: 0;
+  padding: 0;
+  /*margin-left: auto;  */  
+/* Keep links pushed to the right even without .container */
+}
+
+/* ===== Top-level links (white, “pop” on hover, blue when active) ===== */
+.nav-link,
+.nav-link-static {
+  display: inline-flex;
+  align-items: center;
+  color: #f5f7fb;                /* soft white like Nicepage text */
+  text-decoration: none; /* no underline */
+  font-weight: 500;
+  line-height: 1;
+  padding: 0 18px;               /* horizontal breathing room */
+  height: 64px;                  /* aligns with bar height */
+  font-size: clamp(15px, 1.05vw, 18px); /* responsive like Nicepage */
+  transition: color .15s ease, transform .15s ease;
+}
+
+/* hover “pop” + color shift */
+.nav-link:hover,
+.nav-link-static:hover {
+  color: var(--color-primary);   /* your blue */
+  transform: translateY(-1px);   /* subtle pop */
+  text-decoration: none; /* no underline even on hover */
+}
+
+/* active = blue (route-aware via NavLink) */
+.nav-link.active {
+  color: var(--color-primary);
+  text-decoration: none; 
+}
+
+/* caret after “Islands” */
+.caret {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: .9em;
+  opacity: .85;
+}
+
+/* ===== Dropdown ===== */
+.dropdown {
+  position: relative;
+}
+
+/* white dropdown panel like your screenshot */
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 360px;               /* wide list like Nicepage */
+  background: #ffffff;
+  border: 1px solid #dfe3ea;
+  box-shadow: 0 16px 28px rgba(0,0,0,.18);
+  border-radius: 4px;
+  padding: 4px 0;                 /* compact vertical rhythm */
+  display: none;                  /* show on hover */
+  z-index: 1000;
+}
+
+/* open on hover */
+.dropdown:hover .dropdown-menu {
+  display: block;
+}
+
+/* each row */
+.dropdown-link {
+  display: block;
+  color: #1f2937;                 /* slate-800 */
+  padding: 14px 18px;
+  text-decoration: none;
+  font-size: 16px;
+  line-height: 1.2;
+  transition: background .15s ease, color .15s ease;
+  border-top: 1px solid #edf0f4;
+}
+.dropdown-menu li:first-child .dropdown-link {
+  border-top: none;
+}
+
+/* hover row = light grey like Nicepage */
+.dropdown-link:hover {
+  background: #f3f5f8;
+  color: #0f172a;                 /* slightly darker text on hover */
+}
+
+/* ===== Mobile niceties: allow wrapping under 768px ===== */
+@media (max-width: 768px) {
+  .nav-inner { height: auto; padding-block: 8px; }
+  .nav-menu   { flex-wrap: wrap; gap: 4px 8px; }
+  .nav-link, .nav-link-static { height: 44px; padding: 0 12px; }
+  .dropdown-menu { position: static; min-width: 100%; box-shadow: none; border-radius: 6px; }
+}
