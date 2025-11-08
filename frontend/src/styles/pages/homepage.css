@@ -106,3 +106,34 @@
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: var(--space-6);
 }
+/* ===== Make island tiles & info cards act as full clickable links ===== */
+.tile-link {
+  display: block;
+  color: inherit;        
+}
+
+.clickable { cursor: pointer; }
+
+/* Hover polish on the whole link area */
+.tile-link .island-tile,
+.tile-link .card.clickable {
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+
+.tile-link:hover .island-tile,
+.tile-link:hover .card.clickable {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0,0,0,.22);
+  /* If your cards have borders, this adds a subtle accent: */
+  border-color: var(--color-primary);
+}
+
+/* Keyboard focus ring for accessibility */
+.tile-link:focus-visible .island-tile,
+.tile-link:focus-visible .card.clickable {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* (Optional) If you want the island tile text/icon to stay your chosen colors on hover */
+.tile-link:hover .island-label { color: #b04851; }
