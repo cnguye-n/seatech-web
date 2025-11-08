@@ -98,7 +98,8 @@ export default function Homepage() {
             <div className="islands-grid">
               {islands.map((island, i) => (
                 <Reveal key={island.slug} effect="scale-in" delay={i * 120}>
-                  <Link to={`/islands/${island.slug}`} className="tile-link">
+                  <Link to={`/islands#${island.slug}`} className="tile-link">
+
                     <div className="island-tile clickable">
                       <div className="island-icon">🧭</div>
                       <span className="island-label">{island.name}</span>
@@ -127,13 +128,13 @@ export default function Homepage() {
               <p className="bodytext">A team dedicated to marine tracking and conservation.</p>
             </div>
           </Link>
-          <Link to="/islands/island-1" className="tile-link">
+          <Link to="/islands#island-1" className="tile-link">
             <div className="card">
               <p className="heading3">Island 1</p>
               <p className="bodytext">Tagging turtles in coastal sites of Colombia.</p>
             </div>
           </Link>
-          <Link to="/islands/island-2" className="tile-link">
+          <Link to="/islands#island-2" className="tile-link">
             <div className="card">
               <p className="heading3">Island 2</p>
               <p className="bodytext">Navigation and exploration of sea turtle habitats.</p>

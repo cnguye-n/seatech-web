@@ -12,7 +12,7 @@ export default function App() {
       <AppContainer>
         <Routes>
           <Route path="/" element={<Homepage />} />
-          <Route path="/islands/:slug" element={<IslandPage />} />
+          <Route path="/islands" element={<IslandPage />} />
           <Route path="/about" element={<About />} />
           <Route path="/turtles" element={<TurtlePage />} />
           {/* more routes here */}
