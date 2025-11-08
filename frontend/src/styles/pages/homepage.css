@@ -63,15 +63,18 @@
 /* 6 white tiles on top of background image */
 .islands-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: clamp(16px, 3vw, 28px);
-  max-width: 900px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  justify-content: center;   /* centers the grid when not full width */
+  gap: clamp(32px, 4vw, 48px);
+  max-width: 1100px;
   margin-inline: auto;
 }
 .island-tile {
   display: grid;
   place-items: center;
   aspect-ratio: 1 / 1;
+  min-width: 280px;   /* ⬅️ increase this for bigger squares */
+  min-height: 280px;  /* ⬅️ keeps them square */
   border-radius: 6px;
   background: #ffffff;
   color: #d1656f;                 /* Nicepage-ish muted red for icon */
@@ -92,13 +95,25 @@
   letter-spacing: .4px;
 }
 
-/* Responsive: stack 2 columns then 1 */
+
+/* REGARDING THE PHOTOS IN THE TILES */
+.island-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;       /* fills square cleanly */
+  border-radius: 12px 12px 0 0;  /* rounded top only */
+  transition: transform 0.3s ease;
+}
+
+/* Responsive: stack 2 columns then 1 
 @media (max-width: 900px) {
   .islands-grid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 520px) {
   .islands-grid { grid-template-columns: 1fr; max-width: 420px; }
 }
+*/
+
 
 /* ============ INFO CARDS (optional) ============ */
 .info-grid {
