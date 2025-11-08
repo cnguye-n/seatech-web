@@ -4,7 +4,7 @@
   padding: 0;                     /* background handles spacing */
 }
 .hero-overlay {
-  background: url("/images/hero-turtle.jpg") center/cover no-repeat;
+  background: url("/images/turtlewallpaper.jpg") center/cover no-repeat;
 }
 .hero-overlay::after {            /* subtle dark overlay for text readability */
   content: "";
