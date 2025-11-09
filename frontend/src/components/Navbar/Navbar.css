@@ -7,11 +7,11 @@
   z-index: 10000;  
   background: transparent; /* deep black like Nicepage header */
   color: var(--color-white);
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+
 }
 .nav-inner {
   width: 100%;
-  height: 80px;                 /* Nicepage-like height */
+  height: var(--nav-h);                /* Nicepage-like height */
   display: flex;
   align-items: center;
   justify-content: space-between;

@@ -40,33 +40,20 @@ export default function Homepage() {
   return (
     <div className="homepage">
       {/* ===== 1) HERO ===== */}
-      <section className="section hero">
-        <div className="hero-overlay">
-          <div className="container hero-content">
-            <Reveal effect="fade-up">  {/* THE EFFECT ONLY HAPPENS ONCE IDK HOW TO MAKE IT REPEAT */}
-              <p className="heading1">Homepage</p>
-            </Reveal>
-            <Reveal effect="fade-up">
-              <p className="bodytext">
-                This is our project.
-              </p>
-            </Reveal>
+      <section className="section hero-gallery">
+        <div className="hero-gallery-wrapper">
+          <FullBleedGallery
+            images={galleryImages}
+            aspectRatio="3/2"      // adjust to make it taller/shorter
+            autoPlay={true}
+            autoPlayMs={5000}
+          />
+
+          {/* Overlay text */}
+          <div className="hero-gallery-text">
+            <p className="heading1">SEAtech</p>
+            <p className="bodytext">This is our project.</p>
           </div>
-        </div>
-      </section>
-
-      {/* ===== 2) GALLERY ===== THIS NEEDS WORK*/}
-      <section className="section gallery">
-        <div className="container">
-
-          <Reveal effect="scale-in" delay={80}>
-            <FullBleedGallery
-              images={galleryImages}
-              aspectRatio="3/2"     // or "21/9", "3/2"
-              autoPlay={true}
-              autoPlayMs={5000}
-            />
-          </Reveal>
         </div>
       </section>
 

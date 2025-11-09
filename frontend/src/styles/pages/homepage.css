@@ -3,13 +3,46 @@
 .hero {
   padding: 0;                     /* background handles spacing */
 }
-.hero-overlay {
-  background: url("/images/turtlewallpaper.jpg") center/cover no-repeat;
+.hero-gallery {
+  padding: 0;                  /* remove section padding */
+  margin-top: 0;
+  position: relative;
 }
-.hero-overlay::after {            /* subtle dark overlay for text readability */
-  content: "";
-  display: block;
-  background: linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.45));
+
+/* The gallery container */
+.hero-gallery-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+/* The FullBleedGallery already handles the image filling,
+   but we need this to allow text overlay */
+.hero-gallery-wrapper .fullbleed-gallery {
+  position: relative;
+  z-index: 1;
+}
+
+/* Overlay text */
+.hero-gallery-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: white;
+  z-index: 2;             /* ensure it’s above the gallery */
+}
+
+.hero-gallery-text .heading1 {
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.hero-gallery-text .bodytext {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 .hero-content {
   text-align: center;
@@ -50,7 +83,7 @@
   width: 100%;
   /* no background so there are NO black bars; the image will cover */
   overflow: hidden;
-  border-radius: 12px;                /* keep your rounded look */
+  border-radius: 0;                /* keep your rounded look */
 }
 
 .fg-slide {

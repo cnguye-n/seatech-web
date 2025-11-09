@@ -123,6 +123,9 @@
   /* ===== Container sizing ===== */
   --container-max: 1200px;  /* maximum width for large screens */
   --container-pad: 1rem;    /* side padding for mobile */
+
+  /* ===== Navbar sizing ===== */
+  :root { --nav-h: 80px; } 
 }
 
 /* ----------------------------------------------------------
@@ -357,6 +360,4 @@ code, pre {
   .reveal { opacity: 1 !important; transform: none !important; }
 }
 .app > main,
-main {
-  padding-top: 64px;   /* must match .nav-inner height */
-}
+main { padding-top: var(--nav-h); }
