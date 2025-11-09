@@ -8,6 +8,11 @@
   margin-top: 0;
   position: relative;
 }
+.hero-gallery .fg-viewport {
+  height: 100vh;        /* full viewport height */
+  aspect-ratio: unset;  /* disable ratio so height takes control */
+  border-radius: 0;     /* looks cleaner as a hero */
+}
 
 /* The gallery container */
 .hero-gallery-wrapper {
