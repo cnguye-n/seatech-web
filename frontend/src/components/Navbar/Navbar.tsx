@@ -1,25 +1,30 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
 import './Navbar.css';
 
 const islands = [
-  { label: 'Isla Menor Cayo Roncador', to: '/islands/roncador' },
-  { label: 'Isla Providencia y Santa Catalina', to: '/islands/providencia' },
-  { label: 'Isla Menor Cayo Serrana', to: '/islands/serrana' },
-  { label: 'Isla Menor Cayo Serranilla', to: '/islands/serranilla' },
-  { label: 'Isla Menor Cayo Bolivar', to: '/islands/bolivar' },
-  { label: 'Isla Menor Cayo Albuquerque', to: '/islands/albuquerque' },
+  { label: 'Isla Menor Cayo Roncador', id: "island-1" },
+  { label: 'Isla Providencia y Santa Catalina', id: "island-2" },
+  { label: 'Isla Menor Cayo Serrana', id: "island-3" },
+  { label: 'Isla Menor Cayo Serranilla', id: "island-4" },
+  { label: 'Isla Menor Cayo Bolivar', id: "island-5" },
+  { label: 'Isla Menor Cayo Albuquerque', id: "island-6" },
 ];
 
 export default function Navbar() {
+  const navigate = useNavigate();
+
+  const goToIsland = (id: string) => {
+    navigate(`/islands#${id}`);
+  };
+
   return (
     <nav className="navbar">
       <div className="nav-inner">
-        <a href="/" className="nav-logo">logo</a>
+        <Link to="/" className="nav-logo">logo</Link>
 
         <ul className="nav-menu">
           <li className="nav-item">
-            <NavLink to="/" end className={({isActive}) => isActive ? 'nav-link active' : 'nav-link'}>
+            <NavLink to="/" end className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
               Home
             </NavLink>
           </li>
@@ -32,29 +37,29 @@ export default function Navbar() {
 
             <ul className="dropdown-menu">
               {islands.map((it) => (
-                <li key={it.to}>
-                  <NavLink to={it.to} className="dropdown-link">
+                <li key={it.id}>
+                  <button type="button" className="dropdown-link" onClick={() => goToIsland(it.id)}>
                     {it.label}
-                  </NavLink>
+                  </button>
                 </li>
               ))}
             </ul>
           </li>
 
           <li className="nav-item">
-            <NavLink to="/sensor" className={({isActive}) => isActive ? 'nav-link active' : 'nav-link'}>
+            <NavLink to="/sensor" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
               Sensor
             </NavLink>
           </li>
 
           <li className="nav-item">
-            <NavLink to="/about" className={({isActive}) => isActive ? 'nav-link active' : 'nav-link'}>
+            <NavLink to="/about" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
               About
             </NavLink>
           </li>
 
           <li className="nav-item">
-            <NavLink to="/login" className={({isActive}) => isActive ? 'nav-link active' : 'nav-link'}>
+            <NavLink to="/login" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
               Login
             </NavLink>
           </li>
