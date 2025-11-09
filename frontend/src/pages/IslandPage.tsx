@@ -44,7 +44,7 @@ export default function IslandsPage() {
     <main className="section">
       <div className="container">
         <p className="heading1">Research Islands</p>
-        <p className="bodytext">All islands in one place.</p>
+        <p className="bodytext">Tracking sea turtles across Colombia’s remote Caribbean islands.</p>
 
         {islands.map((island, idx) => (
           <div key={island.id}>
