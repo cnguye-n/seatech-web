@@ -1,6 +1,14 @@
 # seatech-web
 Senior Capstone Project
 
+## SEAtech Web — Dev Best Practices
+Make sure you update your main everytime. You can do git pull or click on the bottom on the very left bottom of your visual studio code screen
+
+<img width="825" height="334" alt="image" src="https://github.com/user-attachments/assets/03d59705-015b-40da-9862-128e57b06b21" />
+-the 8 with the arrow downward in this images means there are 8 commits behind so click the downward arrow to update main
+
+
+
 ## SEAtech Web — Dev Setup
 ### Prerequisites
 - **Git**
