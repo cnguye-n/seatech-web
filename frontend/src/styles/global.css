@@ -356,3 +356,7 @@ code, pre {
 @media (prefers-reduced-motion: reduce) {
   .reveal { opacity: 1 !important; transform: none !important; }
 }
+.app > main,
+main {
+  padding-top: 64px;   /* must match .nav-inner height */
+}
