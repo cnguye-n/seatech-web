@@ -4,8 +4,8 @@
   top: 0;
   left: 0;
   right: 0;         /* or width: 100% */
-
-  background: #0b0b0b; /* deep black like Nicepage header */
+  z-index: 10000;  
+  background: transparent; /* deep black like Nicepage header */
   color: var(--color-white);
   border-bottom: 1px solid rgba(255,255,255,0.06);
 }
@@ -101,7 +101,7 @@
   border-radius: 4px;
   padding: 4px 0;                 /* compact vertical rhythm */
   display: none;                  /* show on hover */
-  z-index: 1000;
+  z-index: 1001;
 
   max-height: 70vh;               /* prevent overflow past viewport */
   overflow-y: auto;               /* scroll if content too tall */
