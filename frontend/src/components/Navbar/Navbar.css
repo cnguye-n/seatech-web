@@ -6,7 +6,7 @@
 }
 .nav-inner {
   width: 100%;
-  height: 64px;                 /* Nicepage-like height */
+  height: 80px;                 /* Nicepage-like height */
   display: flex;
   align-items: center;
   justify-content: space-between;
