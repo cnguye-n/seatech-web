@@ -24,7 +24,7 @@
 }
 
 .gallery .container {
-  padding-block: clamp(48px, 8vw, 100px);
+  padding-inline: 0;
 }
 
 .gallery .heading2 {
@@ -40,6 +40,100 @@
   margin-inline: auto;
   text-align: center;
 }
+.fullbleed-gallery {
+  width: 100%;
+  margin-inline: auto;
+}
+
+.fg-viewport {
+  position: relative;
+  width: 100%;
+  /* no background so there are NO black bars; the image will cover */
+  overflow: hidden;
+  border-radius: 12px;                /* keep your rounded look */
+}
+
+.fg-slide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;                 
+  opacity: 0;
+  transform: scale(1.01); /* tiny zoom to avoid harsh static feel */
+  transition:
+    opacity .65s cubic-bezier(.22,.61,.36,1),
+    transform 1.6s ease-out;  
+}
+.fg-slide.is-active { 
+  opacity: 1; 
+  transform: scale(1);   
+}
+
+/* arrows */
+.fg-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;      
+  border: none;          
+  color: #fff;          
+  font-size: 2rem;        
+  cursor: pointer;
+  user-select: none;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+.fg-prev { left: 12px; }
+.fg-next { right: 12px; }
+.fg-nav:hover { color: var(--color-primary); /* e.g., your accent blue */
+  background: none; }
+
+/* dots */
+.fg-dots {
+  position: absolute;            /* overlay on top of the image */
+  bottom: 10px;                  /* adjust how high they sit from bottom */
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 5;  
+}
+.fg-dot {
+  -webkit-appearance: none; 
+  appearance: none;
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  aspect-ratio: 1 / 1;    
+  padding: 0;        
+  margin: 0;
+  border: 0;
+  border-radius: 50%;        /* circle */
+  background: rgba(255,255,255,0.45);
+  line-height: 0;           
+  cursor: pointer;
+  transition: transform .2s ease, background .2s ease;
+}
+
+.fg-dot.is-active { background: #fff; }
+
+
+.fg-meta {
+  text-align: center;
+  padding: 6px 12px 0;
+  color: var(--color-text);
+}
+.fg-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.fg-cap {
+  color: var(--color-text-dim);
+  font-size: 0.95rem;
+}
+.gallery .demo-card { padding: 0; background: transparent; box-shadow: none; }
 
 /* ============ ISLANDS SECTION (background image + 6 squares) ============ */
 .islands { padding: 0; }          /* we want the bg to control spacing */

@@ -2,8 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import "../styles/pages/homepage.css";
 import Reveal from "../components/Reveal/Reveal";
-import Gallery, { type GalleryItem } from "../components/Gallery/Gallery";
-
+import FullBleedGallery, { type GalleryItem } from "../components/PhotoGallery";
 
 export default function Homepage() {
   const islands = [
@@ -18,32 +17,22 @@ export default function Homepage() {
     {
       src: "/images/turtle1.jpg",
       alt: "Sea turtle swimming over coral reef",
-      title: "Sea Turtle Swimming",
-      caption: "A turtle exploring the coral reef.",
     },
     {
       src: "/images/turtle2.jpg",
       alt: "Sea turtle near the surface of shallow water",
-      title: "Shallow Waters",
-      caption: "Captured near San Andrés island.",
     },
     {
       src: "/images/turtle3.jpg",
       alt: "Sea turtle gliding above coral formations",
-      title: "Reef Zone",
-      caption: "Turtle gliding above coral formations.",
     },
     {
       src: "/images/turtle4goodbackground.jpg",
       alt: "Turtle resting on the seabed",
-      title: "Resting Spot",
-      caption: "A turtle resting on the sandy seabed.",
     },
     {
       src: "/images/turtle5goodbackground.jpeg",
       alt: "Sea turtle surfacing for air",
-      title: "Surface Break",
-      caption: "Sea turtle surfacing for air.",
     },
   ];
 
@@ -69,15 +58,13 @@ export default function Homepage() {
       {/* ===== 2) GALLERY ===== THIS NEEDS WORK*/}
       <section className="section gallery">
         <div className="container">
-          <Reveal effect="fade-in">
-            <p className="heading2 mb-4">Gallery</p>
-          </Reveal>
 
           <Reveal effect="scale-in" delay={80}>
-            <Gallery
+            <FullBleedGallery
               images={galleryImages}
-              aspectRatio="16 / 9"
-              autoPlay={false}
+              aspectRatio="3/2"     // or "21/9", "3/2"
+              autoPlay={true}
+              autoPlayMs={5000}
             />
           </Reveal>
         </div>
