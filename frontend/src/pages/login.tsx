@@ -8,10 +8,11 @@ declare global {
 
 export default function Login() {
   const [user, setUser] = useState<any>(null);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
-  // ✅ Initialize Google Sign-In
+  // Initialize Google Sign-In
   useEffect(() => {
-    /* Load the Google Identity script dynamically */
     const script = document.createElement("script");
     script.src = "https://accounts.google.com/gsi/client";
     script.async = true;
@@ -21,7 +22,7 @@ export default function Login() {
     script.onload = () => {
       if (window.google) {
         window.google.accounts.id.initialize({
-          client_id: "1070305574453-fmq2q4sitlur2fnmp16qq1enkfg4t0n5.apps.googleusercontent.com", // <-- put yours here
+          client_id: "1070305574453-fmq2q4sitlur2fnmp16qq1enkfg4t0n5.apps.googleusercontent.com", // This is tied to my personal account, it probably shouldn't be LOL
           callback: handleGoogleResponse,
         });
 
@@ -58,15 +59,45 @@ export default function Login() {
     setUser(null);
   };
 
-  // 🔐 Show logged-in user info or login UI
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    alert(`Logging in as: ${username}`);
+  };
+
+  // Show logged-in user info or login UI
   return (
     <div style={styles.page}>
+        <div style={styles.divider}>
+          <span>or</span>
+        </div>
       <div style={styles.card}>
         {!user ? (
           <>
             <h1 style={styles.title}>Login</h1>
-            <p style={styles.subtitle}>Sign in with Google</p>
-            <div id="googleSignInDiv" style={{ display: "flex", justifyContent: "center" }}></div>
+                  <form onSubmit={handleSubmit} style={styles.form}>
+        <div>
+          <input
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            style={styles.input}
+          />
+          </div>
+        <div>
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={styles.input}
+          />
+          </div>
+          <button type="submit" style={styles.button}>
+            Log In
+          </button>
+        </form>
+            <div id="googleSignInDiv" style={{ marginTop: "20px", display: "flex", justifyContent: "center" }}></div>
           </>
         ) : (
           <>
@@ -88,7 +119,7 @@ export default function Login() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  page: {
+     page: {
     minHeight: "100vh",
     display: "flex",
     alignItems: "center",
@@ -109,7 +140,7 @@ const styles: Record<string, React.CSSProperties> = {
   subtitle: { marginBottom: "1.5rem", color: "#555" },
   button: {
     padding: "0.75rem 1.25rem",
-    borderRadius: "8px",
+    borderRadius: "20px",
     border: "none",
     backgroundColor: "#7aa2ff",
     color: "#fff",
