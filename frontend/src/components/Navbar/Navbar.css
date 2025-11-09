@@ -91,7 +91,7 @@
   left: 0;
   min-width: 360px;               /* wide list like Nicepage */
   background: #ffffff;
-  border: 1px solid #dfe3ea;
+  border: none;
   box-shadow: 0 16px 28px rgba(0,0,0,.18);
   border-radius: 4px;
   padding: 4px 0;                 /* compact vertical rhythm */
@@ -110,14 +110,18 @@
 
 /* each row */
 .dropdown-link {
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
   display: block;
   color: #1f2937;                 /* slate-800 */
   padding: 14px 18px;
   text-decoration: none;
+  cursor: pointer;
   font-size: 16px;
   line-height: 1.2;
   transition: background .15s ease, color .15s ease;
-  border-top: 1px solid #edf0f4;
 }
 .dropdown-menu li:first-child .dropdown-link {
   border-top: none;
@@ -136,3 +140,4 @@
   .nav-link, .nav-link-static { height: 44px; padding: 0 12px; }
   .dropdown-menu {min-width: 100%; box-shadow: none; border-radius: 6px; }
 }
+
