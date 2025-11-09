@@ -1,5 +1,4 @@
-
-import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
 import './Navbar.css';
 
 const islands = [
@@ -13,7 +12,7 @@ const islands = [
 
 export default function Navbar() {
   const navigate = useNavigate();
-  const location = useLocation();
+
   const goToIsland = (id: string) => {
     navigate(`/islands#${id}`);
   };
@@ -25,7 +24,7 @@ export default function Navbar() {
 
         <ul className="nav-menu">
           <li className="nav-item">
-            <NavLink to="/" end className={({isActive}) => isActive ? 'nav-link active' : 'nav-link'}>
+            <NavLink to="/" end className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
               Home
             </NavLink>
           </li>
@@ -39,38 +38,28 @@ export default function Navbar() {
             <ul className="dropdown-menu">
               {islands.map((it) => (
                 <li key={it.id}>
-                  {/* You can use a button for clarity, or NavLink with to={`/islands#${it.id}`} */}
-                  <button
-                    type="button"
-                    className="dropdown-link"
-                    onClick={() => goToIsland(it.id)}
-                  >
+                  <button type="button" className="dropdown-link" onClick={() => goToIsland(it.id)}>
                     {it.label}
                   </button>
-                  {/* Alternative (also works):
-                  <NavLink to={`/islands#${it.id}`} className="dropdown-link">
-                    {it.label}
-                  </NavLink>
-                  */}
                 </li>
               ))}
             </ul>
           </li>
 
           <li className="nav-item">
-            <NavLink to="/sensor" className={({isActive}) => isActive ? 'nav-link active' : 'nav-link'}>
+            <NavLink to="/sensor" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
               Sensor
             </NavLink>
           </li>
 
           <li className="nav-item">
-            <NavLink to="/about" className={({isActive}) => isActive ? 'nav-link active' : 'nav-link'}>
+            <NavLink to="/about" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
               About
             </NavLink>
           </li>
 
           <li className="nav-item">
-            <NavLink to="/login" className={({isActive}) => isActive ? 'nav-link active' : 'nav-link'}>
+            <NavLink to="/login" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
               Login
             </NavLink>
           </li>
