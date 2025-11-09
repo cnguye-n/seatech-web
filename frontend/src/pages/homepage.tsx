@@ -7,12 +7,12 @@ import Gallery, { type GalleryItem } from "../components/Gallery/Gallery";
 
 export default function Homepage() {
   const islands = [
-    { name: "Island 1", slug: "island-1" },
-    { name: "Island 2", slug: "island-2" },
-    { name: "Island 3", slug: "island-3" },
-    { name: "Island 4", slug: "island-4" },
-    { name: "Island 5", slug: "island-5" },
-    { name: "Island 6", slug: "island-6" },
+    { name: "Isla Menor Cayo Roncador", slug: "island-1" },
+    { name: "Isla Providencia y Santa Catalina", slug: "island-2" },
+    { name: "Isla Menor Cayo Serrana", slug: "island-3" },
+    { name: "Isla Menor Cayo Serranilla", slug: "island-4" },
+    { name: "Isla Menor Cayo Bolívar", slug: "island-5" },
+    { name: "Isla Menor Cayo Albuquerque", slug: "island-6" },
   ];
   const galleryImages: GalleryItem[] = [
     {
