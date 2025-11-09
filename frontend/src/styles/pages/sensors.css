@@ -1,0 +1,294 @@
+/* Smooth page scrolling */
+html {
+    scroll-behavior: smooth;
+  }
+  
+  /* ===== Sensor cards grid ===== */
+  
+  .sensor-grid {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(3, minmax(240px, 1fr));
+  }
+  
+  /* Responsive fallbacks */
+  @media (max-width: 1024px) {
+    .sensor-grid {
+      grid-template-columns: repeat(2, minmax(220px, 1fr));
+    }
+  }
+  @media (max-width: 640px) {
+    .sensor-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  /* Base sensor card */
+  .sensor-card {
+    cursor: pointer;
+    padding: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      border-color 0.2s ease,
+      background-color 0.2s ease;
+  }
+  
+  /* Hover effect */
+  .sensor-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    border-color: var(--color-primary);
+    background-color: #202020;
+  }
+  
+  /* Active border accent */
+  .sensor-card.is-open {
+    border-color: var(--color-primary);
+  }
+  
+  /* Header: name + ID stacked */
+  .sensor-card-header {
+    margin-bottom: var(--space-3);
+  }
+  .sensor-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: var(--fontweight-bold);
+    color: var(--color-text);
+  }
+  .sensor-id {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--color-text-dim);
+  }
+  
+  /* Expand/collapse wrapper */
+  .sensor-card-body-wrapper {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition:
+      max-height 0.40s ease,
+      opacity 0.40s ease,
+      transform 0.40s ease;
+  }
+  
+  /* Open state */
+  .sensor-card-body-wrapper.open {
+    max-height: 260px; /* adjust if needed */
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  /* Inner body layout */
+  .sensor-card-body {
+    margin-top: var(--space-2);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .sensors-subtext {
+    font-size: 0.75rem;
+    color: var(--color-text-dim);
+  }
+  
+  .sensors-empty {
+    grid-column: 1 / -1;
+    color: var(--color-text-dim);
+    text-align: center;
+  }
+  
+  /* Status badge */
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .status-online {
+    background: rgba(46, 204, 113, 0.12);
+    color: #2ecc71;
+  }
+  .status-offline {
+    background: rgba(231, 76, 60, 0.16);
+    color: #e74c3c;
+  }
+  .status-warning {
+    background: rgba(241, 196, 15, 0.14);
+    color: #f1c40f;
+  }
+  
+  /* Filters */
+  .filters-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+  }
+  .filters-inputs {
+    display: flex;
+    flex: 1;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+  }
+  .filters-field {
+    min-width: 160px;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--color-border);
+    background: var(--color-darkgrey);
+    color: var(--color-text);
+    outline: none;
+    transition: border-color 0.2s ease;
+  }
+  .filters-field:focus {
+    border-color: var(--color-primary);
+  }
+  
+  /* Summary cards grid */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+  @media (max-width: 900px) {
+    .summary-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  
+  /* ===== Active layout patterns for 3-card grid ===== */
+  
+  /* First card active: tall left, others stacked right */
+  .sensor-grid.active-index-0 {
+    grid-template-columns: 2fr 1fr;
+    grid-auto-rows: auto;
+  }
+  .sensor-grid.active-index-0 .sensor-card:nth-child(1) {
+    grid-column: 1 / 2;
+    grid-row: 1 / 3;
+  }
+  .sensor-grid.active-index-0 .sensor-card:nth-child(2) {
+    grid-column: 2 / 3;
+    grid-row: 1 / 2;
+  }
+  .sensor-grid.active-index-0 .sensor-card:nth-child(3) {
+    grid-column: 2 / 3;
+    grid-row: 2 / 3;
+  }
+  
+  /* Middle card active: full-width top, others below */
+  .sensor-grid.active-index-1 {
+    grid-template-columns: repeat(2, minmax(240px, 1fr));
+    grid-auto-rows: auto;
+  }
+  .sensor-grid.active-index-1 .sensor-card:nth-child(2) {
+    grid-column: 1 / 3;
+    grid-row: 1 / 2;
+  }
+  .sensor-grid.active-index-1 .sensor-card:nth-child(1) {
+    grid-column: 1 / 2;
+    grid-row: 2 / 3;
+  }
+  .sensor-grid.active-index-1 .sensor-card:nth-child(3) {
+    grid-column: 2 / 3;
+    grid-row: 2 / 3;
+  }
+  
+  /* Third card active: tall right, others stacked left */
+  .sensor-grid.active-index-2 {
+    grid-template-columns: 1fr 2fr;
+    grid-auto-rows: auto;
+  }
+  .sensor-grid.active-index-2 .sensor-card:nth-child(3) {
+    grid-column: 2 / 3;
+    grid-row: 1 / 3;
+  }
+  .sensor-grid.active-index-2 .sensor-card:nth-child(1) {
+    grid-column: 1 / 2;
+    grid-row: 1 / 2;
+  }
+  .sensor-grid.active-index-2 .sensor-card:nth-child(2) {
+    grid-column: 1 / 2;
+    grid-row: 2 / 3;
+  }
+  
+  /* Mobile / tablet: normalize layout */
+  @media (max-width: 1024px) {
+    .sensor-grid,
+    .sensor-grid.active-index-0,
+    .sensor-grid.active-index-1,
+    .sensor-grid.active-index-2 {
+      grid-template-columns: 1fr;
+    }
+  
+    .sensor-grid .sensor-card {
+      grid-column: auto !important;
+      grid-row: auto !important;
+    }
+  }
+  
+  /* ===== Custom Sensor Build section ===== */
+  
+  .sensor-build-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(240px, 1fr));
+    gap: var(--space-4);
+    margin-top: var(--space-4);
+  }
+  @media (max-width: 1024px) {
+    .sensor-build-grid {
+      grid-template-columns: repeat(2, minmax(220px, 1fr));
+    }
+  }
+  @media (max-width: 640px) {
+    .sensor-build-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  .sensor-build-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+  
+  .sensor-placeholder-image {
+    width: 100%;
+    height: 140px;
+    border-radius: var(--radius);
+    border: 1px dashed var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    color: var(--color-text-dim);
+    background: rgba(255, 255, 255, 0.01);
+  }
+  .sensor-placeholder-image.small {
+    height: 110px;
+  }
+  
+  .sensor-placeholder-text {
+    font-size: 0.9rem;
+    color: var(--color-text);
+  }
+  
+  .sensor-parts-list {
+    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
