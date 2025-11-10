@@ -292,3 +292,343 @@ html {
     gap: 0.25rem;
   }
   
+/* MOCK LIVE MAP */
+
+.map-card {
+  margin-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.map-header-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+
+.map-subtitle {
+  font-size: 0.9rem;
+  color: var(--color-text-dim);
+}
+
+.map-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--color-text-dim);
+}
+
+.map-badge {
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.map-area {
+  position: relative;
+  width: 100%;
+  height: 260px;
+  border-radius: var(--radius);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(110, 167, 249, 0.08), transparent),
+    radial-gradient(circle at 90% 100%, rgba(110, 167, 249, 0.06), transparent),
+    #020817;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Stylized islands */
+.map-island {
+  position: absolute;
+  background: linear-gradient(
+    to bottom,
+    rgba(110, 167, 249, 0.2),
+    rgba(110, 167, 249, 0.05)
+  );
+  border-radius: 999px;
+}
+
+.island-roncador { width: 46px; height: 26px; left: 32%; top: 38%; }
+.island-providencia { width: 40px; height: 22px; left: 47%; top: 50%; }
+.island-serrana { width: 50px; height: 24px; left: 63%; top: 33%; }
+
+/* Markers */
+.map-marker {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  transform: translate(-50%, -50%);
+}
+
+.map-marker-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  box-shadow: 0 0 12px rgba(110, 167, 249, 0.9);
+}
+
+.map-marker-label {
+  display: flex;
+  flex-direction: column;
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+}
+
+.map-marker-name {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--color-text);
+}
+.map-marker-id {
+  font-size: 0.6rem;
+  color: var(--color-text-dim);
+}
+
+/* Marker color variants */
+.marker-online .map-marker-dot { background: #2ecc71; }
+.marker-warning .map-marker-dot { background: #f1c40f; }
+.marker-offline .map-marker-dot { background: #e74c3c; }
+
+/* Legend */
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--color-text-dim);
+}
+
+.map-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.map-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.map-legend-dot.online { background: #2ecc71; }
+.map-legend-dot.warning { background: #f1c40f; }
+.map-legend-dot.offline { background: #e74c3c; }
+
+.map-legend-note {
+  margin-left: auto;
+  font-size: 0.75rem;
+}
+
+/* Interactive Map (react-leaflet) */
+
+.map-card {
+  margin-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.map-header-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+
+.map-subtitle {
+  font-size: 0.9rem;
+  color: var(--color-text-dim);
+  margin: 0;
+}
+
+.map-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--color-text-dim);
+}
+
+.map-badge {
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.map-timer {
+  font-size: 0.75rem;
+}
+
+/* Map container */
+.map-leaflet-wrapper {
+  width: 100%;
+  height: 320px;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.map-leaflet-wrapper .leaflet-container {
+  width: 100%;
+  height: 100%;
+  background: #020817;
+}
+
+/* Animated marker icons via divIcon */
+
+.sensor-map-marker {
+  border-radius: 999px;
+  width: 14px;
+  height: 14px;
+  box-shadow: 0 0 6px rgba(110, 167, 249, 0.9);
+  animation: sensor-pulse 1.8s ease-in-out infinite;
+}
+
+.sensor-map-marker.marker-online {
+  background: #2ecc71;
+}
+.sensor-map-marker.marker-warning {
+  background: #f1c40f;
+}
+.sensor-map-marker.marker-offline {
+  background: #e74c3c;
+}
+
+/* subtle pulsing animation */
+@keyframes sensor-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 4px rgba(110, 167, 249, 0.5);
+  }
+  50% {
+    transform: scale(1.35);
+    box-shadow: 0 0 14px rgba(110, 167, 249, 0.9);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 4px rgba(110, 167, 249, 0.4);
+  }
+}
+
+/* Legend */
+
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--color-text-dim);
+}
+
+.map-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.map-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+
+.map-legend-dot.online {
+  background: #2ecc71;
+}
+.map-legend-dot.warning {
+  background: #f1c40f;
+}
+.map-legend-dot.offline {
+  background: #e74c3c;
+}
+
+.map-legend-note {
+  margin-left: auto;
+  font-size: 0.75rem;
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+  .map-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .map-meta {
+    align-items: flex-start;
+  }
+
+  .map-leaflet-wrapper {
+    height: 260px;
+  }
+
+  .map-legend {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .map-legend-note {
+    margin-left: 0;
+  }
+}
+
+/* Wrapper inside map for zoom scaling */
+.map-inner-zoom {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-origin: center center;
+  transition: transform 0.25s ease-out;
+}
+
+/* Zoom controls */
+.map-zoom-controls {
+  position: absolute;
+  right: 1.25rem;
+  top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.map-zoom-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.map-zoom-btn:hover {
+  background: rgba(110, 167, 249, 0.16);
+  border-color: var(--color-primary);
+}
+
+/* Use existing marker color classes for dots */
+.marker-online .map-marker-dot { background: #2ecc71; }
+.marker-warning .map-marker-dot { background: #f1c40f; }
+.marker-offline .map-marker-dot { background: #e74c3c; }

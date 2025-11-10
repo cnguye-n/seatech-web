@@ -8,6 +8,11 @@
     "backend": "npm run dev --prefix backend"
   },
   "devDependencies": {
+    "@types/leaflet": "^1.9.21",
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4",
+    "react-leaflet": "^5.0.0"
   }
 }
