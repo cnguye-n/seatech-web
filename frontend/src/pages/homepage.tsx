@@ -14,10 +14,10 @@ export default function Homepage() {
     { name: "Isla Menor Cayo Albuquerque", slug: "island-6" },
   ];
   const galleryImages: GalleryItem[] = [
-    {
+   /* {
       src: "/images/turtle1.jpg",
       alt: "Sea turtle swimming over coral reef",
-    },
+    },*/
     {
       src: "/images/turtle2.jpg",
       alt: "Sea turtle near the surface of shallow water",

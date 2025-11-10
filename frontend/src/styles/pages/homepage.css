@@ -6,6 +6,7 @@
 .hero-gallery {
   padding: 0;                  /* remove section padding */
   margin-top: 0;
+  margin-bottom: 10rem;
   position: relative;
 }
 .hero-gallery .fg-viewport {
