@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import "../styles/pages/homepage.css";
 import Reveal from "../components/Reveal/Reveal";
@@ -14,10 +14,10 @@ export default function Homepage() {
     { name: "Isla Menor Cayo Albuquerque", slug: "island-6" },
   ];
   const galleryImages: GalleryItem[] = [
-   /* {
-      src: "/images/turtle1.jpg",
-      alt: "Sea turtle swimming over coral reef",
-    },*/
+    /* {
+       src: "/images/turtle1.jpg",
+       alt: "Sea turtle swimming over coral reef",
+     },*/
     {
       src: "/images/turtle2.jpg",
       alt: "Sea turtle near the surface of shallow water",
@@ -35,7 +35,39 @@ export default function Homepage() {
       alt: "Sea turtle surfacing for air",
     },
   ];
-
+  useEffect(() => {
+    const titles = document.querySelectorAll<HTMLElement>(".fade-title");
+    let lastY = window.scrollY;
+  
+    const io = new IntersectionObserver(
+      (entries) => {
+        const dir = window.scrollY > lastY ? "down" : "up";
+  
+        entries.forEach((entry) => {
+          const el = entry.target as HTMLElement;
+  
+          if (entry.isIntersecting) {
+            // entering viewport:
+            // scrolling down  → fade up   (start from +12px)
+            // scrolling up    → fade down (start from -12px)
+            el.style.setProperty("--from", dir === "down" ? "12px" : "-12px");
+            el.classList.add("in-view");
+          } else {
+            // leaving viewport:
+            // set opposite so it fades out in the scroll direction
+            el.style.setProperty("--from", dir === "down" ? "-12px" : "12px");
+            el.classList.remove("in-view");
+          }
+        });
+  
+        lastY = window.scrollY;
+      },
+      { threshold: 0.25, rootMargin: "0px 0px -10% 0px" }
+    );
+  
+    titles.forEach((t) => io.observe(t));
+    return () => io.disconnect();
+  }, []);
 
   return (
     <div className="homepage">
@@ -71,17 +103,14 @@ export default function Homepage() {
 
             <div className="islands-grid">
               {islands.map((island, i) => (
-                <Reveal key={island.slug} effect="scale-in" delay={i * 120}>
-                  <Link to={`/islands#${island.slug}`} className="tile-link">
-
-                    <div className="island-tile clickable">
-                      <div className="island-icon">🧭</div>
-                      <span className="island-label">{island.name}</span>
-                    </div>
-                  </Link>
-                </Reveal>
+                <Link key={island.slug} to={`/islands#${island.slug}`} className="tile-link">
+                  <div className="island-tile">
+                    <span className="island-label fade-title">{island.name}</span>
+                  </div>
+                </Link>
               ))}
             </div>
+
           </div>
         </div>
       </section>

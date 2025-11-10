@@ -195,39 +195,41 @@
 
 /* 6 white tiles on top of background image */
 .islands-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  justify-content: center;   /* centers the grid when not full width */
-  gap: clamp(32px, 4vw, 48px);
-  max-width: 1100px;
-  margin-inline: auto;
+  display: flex;
+  flex-direction: column; 
+  justify-content: center; 
+  gap: 24px;                
+  max-width: 700px;         
+  margin-inline: auto;           /* centers the list */
+  padding-inline: 1rem; 
 }
 .island-tile {
-  display: grid;
-  place-items: center;
-  aspect-ratio: 1 / 1;
-  min-width: 280px;   /* ⬅️ increase this for bigger squares */
-  min-height: 280px;  /* ⬅️ keeps them square */
-  border-radius: 6px;
-  background: #ffffff;
-  color: #d1656f;                 /* Nicepage-ish muted red for icon */
-  box-shadow: 0 8px 24px rgba(0,0,0,.18);
-  transition: transform .15s ease, box-shadow .15s ease;
-}
-.island-tile:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(0,0,0,.22);
-}
-.island-icon {
-  font-size: clamp(26px, 3vw, 34px);
-  margin-bottom: 6px;
-}
-.island-label {
-  color: #b04851;                 /* label under icon, Nicepage vibe */
-  font-weight: 600;
-  letter-spacing: .4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  background:transparent;
+  padding: 20px 28px;
+  min-height: 140px;             /* rectangular shape */
+  transition: transform .2s ease, box-shadow .2s ease;
 }
 
+.island-label {
+  color: #dddddd;              
+  font-weight: 800;
+  font-size: 1.8rem;  
+  letter-spacing: .4px;
+}
+/* Make only the text react on hover */
+.island-label {
+  transition: transform 0.25s ease, text-shadow 0.25s ease, color 0.25s ease;
+}
+
+.tile-link:hover .island-label {
+  transform: scale(1.1); /* makes text slightly bigger */
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.8); /* soft glow */
+  color: #ffffff; /* optional brighter color on hover */
+}
 
 /* REGARDING THE PHOTOS IN THE TILES */
 .island-photo {
@@ -262,26 +264,50 @@
 
 .clickable { cursor: pointer; }
 
-/* Hover polish on the whole link area */
 .tile-link .island-tile,
 .tile-link .card.clickable {
   transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
 }
 
-.tile-link:hover .island-tile,
-.tile-link:hover .card.clickable {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(0,0,0,.22);
-  /* If your cards have borders, this adds a subtle accent: */
-  border-color: var(--color-primary);
+.tile-link:hover .island-label { color: #26323c; }
+
+/* --- Research Islands title --- */
+.islands-header .heading2 {
+  color: #ffffff;  
+  font-size: 2.5rem;  
+  font-weight: 700;      
+  text-transform: uppercase; 
 }
 
-/* Keyboard focus ring for accessibility */
-.tile-link:focus-visible .island-tile,
-.tile-link:focus-visible .card.clickable {
-  outline: 3px solid var(--color-primary);
-  outline-offset: 2px;
+/* --- Six sites used as collection/observation areas --- */
+.islands-header .bodytext.dim {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.5rem;          
+  font-weight: 400;                    
+}
+/* Direction-aware fade/slide for island titles */
+.fade-title {
+  --from: 12px;                    /* JS overwrites this based on direction */
+  display: inline-block;           /* so transform only affects the text */
+  opacity: 0;
+  transform: translateY(var(--from));
+  transition:
+    transform .45s cubic-bezier(.22,.61,.36,1),
+    opacity   .45s ease-out;
+  will-change: transform, opacity;
 }
 
-/* (Optional) If you want the island tile text/icon to stay your chosen colors on hover */
-.tile-link:hover .island-label { color: #b04851; }
+.fade-title.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Reduced motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .fade-title,
+  .fade-title.in-view {
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
