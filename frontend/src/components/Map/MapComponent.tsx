@@ -28,6 +28,14 @@ L.Icon.Default.mergeOptions({
 });
 
 export type Point = { name: string; coords: [number, number] };
+type BaseKey = "osm" | "ocean" | "satellite" | "topo";
+type OverlayKey = "oceanLabels" | "boundaries";
+
+type DefaultLayers = {
+  base?: BaseKey;
+  overlays?: Partial<Record<OverlayKey, boolean>>;
+};
+
 
 const DEFAULT_POINTS: Point[] = [
   { name: "San Andrés", coords: [12.584, -81.700] },
@@ -102,14 +110,25 @@ export default function MapComponent({
   initialZoom = 6.7,
   labelZoom = 6.7, // labels visible at/above this zoom
   autoFit = true,
+  defaultLayers,
 }: {
   points?: Point[];
   initialCenter?: [number, number];
   initialZoom?: number;
   labelZoom?: number;
   autoFit?: boolean;
+  defaultLayers?: DefaultLayers;
 }) {
   const [zoom, setZoom] = useState(initialZoom);
+
+ // Default behavior: OSM + Ocean Reference Labels
+  const cfg: Required<DefaultLayers> = {
+    base: defaultLayers?.base ?? "osm",
+    overlays: {
+      oceanLabels: defaultLayers?.overlays?.oceanLabels ?? true,
+      boundaries: defaultLayers?.overlays?.boundaries ?? false,
+    },
+  };
 
   return (
     <MapContainer
@@ -124,54 +143,55 @@ export default function MapComponent({
       <RecenterControl points={points} />
 
       <LayersControl position="topright">
-        {/* === Basemaps (default: OpenStreetMap) === */}
-        <BaseLayer name="Esri Ocean Basemap">
-          <TileLayer
-            attribution="Tiles © Esri — Ocean Basemap"
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}"
-          />
-        </BaseLayer>
+  {/* Base maps */}
+  <BaseLayer checked={cfg.base === "ocean"} name="Esri Ocean Basemap">
+    <TileLayer
+      attribution="Tiles © Esri — Ocean Basemap"
+      url="https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}"
+    />
+  </BaseLayer>
 
-        <BaseLayer checked name="OpenStreetMap (World)">
-          <TileLayer
-            attribution="© OpenStreetMap contributors"
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-        </BaseLayer>
+  <BaseLayer checked={cfg.base === "osm"} name="OpenStreetMap (World)">
+    <TileLayer
+      attribution="© OpenStreetMap contributors"
+      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+    />
+  </BaseLayer>
 
-        <BaseLayer name="Esri World Imagery (Satellite)">
-          <TileLayer
-            attribution="Tiles © Esri — World Imagery"
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-          />
-        </BaseLayer>
+  <BaseLayer checked={cfg.base === "satellite"} name="Esri World Imagery (Satellite)">
+    <TileLayer
+      attribution="Tiles © Esri — World Imagery"
+      url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+    />
+  </BaseLayer>
 
-        <BaseLayer name="OpenTopoMap (Terrain)">
-          <TileLayer
-            attribution="© OpenTopoMap (CC-BY-SA)"
-            url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
-          />
-        </BaseLayer>
+  <BaseLayer checked={cfg.base === "topo"} name="OpenTopoMap (Terrain)">
+    <TileLayer
+      attribution="© OpenTopoMap (CC-BY-SA)"
+      url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
+    />
+  </BaseLayer>
 
-        {/* === Overlays (default: Ocean Reference Labels on) === */}
-        <Overlay checked name="Ocean Reference Labels">
-          <TileLayer
-            attribution="Labels © Esri — Ocean Reference"
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Reference/MapServer/tile/{z}/{y}/{x}"
-            opacity={0.9}
-            zIndex={400}
-          />
-        </Overlay>
+  {/* Overlays */}
+  <Overlay checked={!!cfg.overlays.oceanLabels} name="Ocean Reference Labels">
+    <TileLayer
+      attribution="Labels © Esri — Ocean Reference"
+      url="https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Reference/MapServer/tile/{z}/{y}/{x}"
+      opacity={0.9}
+      zIndex={400}
+    />
+  </Overlay>
 
-        <Overlay name="Boundaries & Places (country/city names)">
-          <TileLayer
-            attribution="© Esri — Boundaries & Places"
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
-            opacity={0.9}
-            zIndex={410}
-          />
-        </Overlay>
-      </LayersControl>
+  <Overlay checked={!!cfg.overlays.boundaries} name="Boundaries & Places (country/city names)">
+    <TileLayer
+      attribution="© Esri — Boundaries & Places"
+      url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+      opacity={0.9}
+      zIndex={410}
+    />
+  </Overlay>
+</LayersControl>
+
 
       {/* Markers + labels */}
       {points.map((p) => (

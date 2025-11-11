@@ -1,6 +1,6 @@
 // src/components/IslandCard/IslandCard.tsx
-import "./IslandCard.css";
 import MapComponent from "../Map/MapComponent"; // use reusable map
+import "./IslandCard.css";
 
 export type IslandFacts = {
   lat: number;
@@ -55,10 +55,11 @@ export default function IslandCard({
             {/* Use MapComponent with a single point */}
             <MapComponent
               points={[{ name, coords: [lat, lng] }]}
-              autoFit={false}                    {/* keep it stable */}
+              autoFit={false}                    
               initialCenter={[lat, lng]}
               initialZoom={9}
               labelZoom={9}
+              defaultLayers={{ base: "satellite", overlays: { oceanLabels: true } }}
             />
           </div>
 
