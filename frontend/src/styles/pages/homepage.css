@@ -1,34 +1,23 @@
-/* ============ HERO ============ */
-/* Full-bleed hero image like Nicepage */
-.hero {
-  padding: 0;                     /* background handles spacing */
-}
+/* ================= HERO (full-bleed gallery) ================= */
 .hero-gallery {
-  padding: 0;                  /* remove section padding */
+  padding: 0;
   margin-top: 0;
   margin-bottom: 10rem;
   position: relative;
 }
 .hero-gallery .fg-viewport {
-  height: 100vh;        /* full viewport height */
-  aspect-ratio: unset;  /* disable ratio so height takes control */
-  border-radius: 0;     /* looks cleaner as a hero */
+  height: 100vh;
+  aspect-ratio: unset;
+  border-radius: 0;
 }
-
-/* The gallery container */
 .hero-gallery-wrapper {
   position: relative;
   width: 100%;
 }
-
-/* The FullBleedGallery already handles the image filling,
-   but we need this to allow text overlay */
 .hero-gallery-wrapper .fullbleed-gallery {
   position: relative;
   z-index: 1;
 }
-
-/* Overlay text */
 .hero-gallery-text {
   position: absolute;
   top: 50%;
@@ -36,278 +25,132 @@
   transform: translate(-50%, -50%);
   text-align: center;
   color: white;
-  z-index: 2;             /* ensure it’s above the gallery */
+  z-index: 2;
 }
-
 .hero-gallery-text .heading1 {
   margin-bottom: 0.5rem;
   font-weight: 700;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
 }
-
 .hero-gallery-text .bodytext {
   font-size: 1.2rem;
   color: rgba(255, 255, 255, 0.85);
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
-.hero-content {
-  text-align: center;
-  color: var(--color-white);
-  padding-block: clamp(64px, 12vw, 160px);
-}
-.hero .heading1 { margin-bottom: var(--space-3); }
 
-/* ============ GALLERY ============ */
-.gallery {
-  background: var(--color-grey); /* light grey background */
-}
-
-.gallery .container {
-  padding-inline: 0;
-}
-
-.gallery .heading2 {
-  color: white; /* dark text for contrast */
-}
-
-.gallery .demo-card {
-  background: #ffffff;
-  border-radius: 10px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-  padding: var(--space-6);
-  max-width: 900px;
-  margin-inline: auto;
-  text-align: center;
-}
-.fullbleed-gallery {
-  width: 100%;
-  margin-inline: auto;
-}
-
-.fg-viewport {
-  position: relative;
-  width: 100%;
-  /* no background so there are NO black bars; the image will cover */
-  overflow: hidden;
-  border-radius: 0;                /* keep your rounded look */
-}
-
+/* FullBleedGallery core */
+.fullbleed-gallery { width: 100%; margin-inline: auto; }
+.fg-viewport { position: relative; width: 100%; overflow: hidden; border-radius: 0; }
 .fg-slide {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;                 
-  opacity: 0;
-  transform: scale(1.01); /* tiny zoom to avoid harsh static feel */
-  transition:
-    opacity .65s cubic-bezier(.22,.61,.36,1),
-    transform 1.6s ease-out;  
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; opacity: 0; transform: scale(1.01);
+  transition: opacity .65s cubic-bezier(.22,.61,.36,1), transform 1.6s ease-out;
 }
-.fg-slide.is-active { 
-  opacity: 1; 
-  transform: scale(1);   
-}
-
-/* arrows */
+.fg-slide.is-active { opacity: 1; transform: scale(1); }
 .fg-nav {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;      
-  border: none;          
-  color: #fff;          
-  font-size: 2rem;        
-  cursor: pointer;
-  user-select: none;
-  padding: 0;
-  line-height: 1;
-  transition: color 0.2s ease;
+  position: absolute; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: #fff; font-size: 2rem;
+  cursor: pointer; user-select: none; padding: 0; line-height: 1;
+  transition: color .2s ease;
 }
 .fg-prev { left: 12px; }
 .fg-next { right: 12px; }
-.fg-nav:hover { color: var(--color-primary); /* e.g., your accent blue */
-  background: none; }
-
-/* dots */
+.fg-nav:hover { color: var(--color-primary); background: none; }
 .fg-dots {
-  position: absolute;            /* overlay on top of the image */
-  bottom: 10px;                  /* adjust how high they sit from bottom */
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 8px;
-  z-index: 5;  
+  position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 8px; z-index: 5;
 }
 .fg-dot {
-  -webkit-appearance: none; 
-  appearance: none;
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  aspect-ratio: 1 / 1;    
-  padding: 0;        
-  margin: 0;
-  border: 0;
-  border-radius: 50%;        /* circle */
+  -webkit-appearance: none; appearance: none; display: inline-block;
+  width: 10px; height: 10px; aspect-ratio: 1 / 1; padding: 0; margin: 0;
+  border: 0; border-radius: 50%;
   background: rgba(255,255,255,0.45);
-  line-height: 0;           
-  cursor: pointer;
+  line-height: 0; cursor: pointer;
   transition: transform .2s ease, background .2s ease;
 }
-
 .fg-dot.is-active { background: #fff; }
 
-
-.fg-meta {
-  text-align: center;
-  padding: 6px 12px 0;
-  color: var(--color-text);
-}
-.fg-title {
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-.fg-cap {
-  color: var(--color-text-dim);
-  font-size: 0.95rem;
-}
-.gallery .demo-card { padding: 0; background: transparent; box-shadow: none; }
-
-/* ============ ISLANDS SECTION (background image + 6 squares) ============ */
-.islands { padding: 0; }          /* we want the bg to control spacing */
-.islands-bg {
-  background: url("/images/sanandres.jpeg") center/cover no-repeat;
-  position: relative;
-}
-.islands-bg::before {
-  content: "";
-  position: absolute; inset: 0;
-  background: rgba(0,0,0,0.25);
-}
+/* ================= ISLANDS (parallax section) ================= */
+.islands { padding: 0; }
 .islands .container {
-  position: relative;             /* sit above overlay */
+  position: relative;
   padding-block: clamp(48px, 10vw, 120px);
 }
-
 .islands-header { text-align: center; margin-bottom: var(--space-8); }
-.islands-header .dim { color: var(--color-text-dim); }
+.islands-header .heading2 {
+  color: #ffffff; font-size: 2.5rem; font-weight: 700; text-transform: uppercase;
+}
+.islands-header .bodytext.dim {
+  color: rgba(255, 255, 255, 0.8); font-size: 1.5rem; font-weight: 400;
+}
 
-/* 6 white tiles on top of background image */
 .islands-grid {
-  display: flex;
-  flex-direction: column; 
-  justify-content: center; 
-  gap: 24px;                
-  max-width: 700px;         
-  margin-inline: auto;           /* centers the list */
-  padding-inline: 1rem; 
+  display: flex; flex-direction: column; justify-content: center;
+  gap: 24px; max-width: 800px; margin-inline: auto; padding-inline: 1rem;
 }
 .island-tile {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-  background:transparent;
-  padding: 20px 28px;
-  min-height: 140px;             /* rectangular shape */
+  display: flex; align-items: center; justify-content: center;
+  gap: 24px; background: transparent; padding: 20px 28px; min-height: 140px;
   transition: transform .2s ease, box-shadow .2s ease;
 }
-
 .island-label {
-  color: #dddddd;              
-  font-weight: 800;
-  font-size: 1.8rem;  
-  letter-spacing: .4px;
+  color: #dddddd; font-weight: 800; font-size: 2.5rem; letter-spacing: .4px;
+  transition: transform .25s ease, text-shadow .25s ease, color .25s ease;
 }
-/* Make only the text react on hover */
-.island-label {
-  transition: transform 0.25s ease, text-shadow 0.25s ease, color 0.25s ease;
-}
-
 .tile-link:hover .island-label {
-  transform: scale(1.1); /* makes text slightly bigger */
-  text-shadow: 0 0 12px rgba(255, 255, 255, 0.8); /* soft glow */
-  color: #ffffff; /* optional brighter color on hover */
+  transform: scale(1.1);
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
+  color: #ffffff;
 }
 
-/* REGARDING THE PHOTOS IN THE TILES */
-.island-photo {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;       /* fills square cleanly */
-  border-radius: 12px 12px 0 0;  /* rounded top only */
-  transition: transform 0.3s ease;
+/* Direction-aware fade */
+.fade-title {
+  --from: 12px;
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(var(--from));
+  transition: transform .45s cubic-bezier(.22,.61,.36,1), opacity .45s ease-out;
+  will-change: transform, opacity;
+}
+.fade-title.in-view { opacity: 1; transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  .fade-title, .fade-title.in-view { transition: none !important; opacity: 1 !important; transform: none !important; }
 }
 
-/* Responsive: stack 2 columns then 1 
-@media (max-width: 900px) {
-  .islands-grid { grid-template-columns: repeat(2, 1fr); }
+/* Parallax */
+.parallax-block {
+  position: relative;
+  height: 200vh;          /* adjust for how long image stays pinned */
+  overflow: clip;
+  isolation: isolate;
 }
-@media (max-width: 520px) {
-  .islands-grid { grid-template-columns: 1fr; max-width: 420px; }
+.parallax-media {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  background: url("/images/island-section.png") center/cover no-repeat;
+  z-index: 1;
 }
-*/
+.parallax-content {
+  position: relative;
+  z-index: 2;
+  padding-block: clamp(48px, 10vw, 120px);
+}
+.islands-sticky {
+  position: sticky;
+  top: calc(var(--nav-h) + 100px);
+  z-index: 3;
+}
+.section.parallax-block .container,
+.parallax-content { padding-top: 0 !important; }
+.islands-header { margin-top: 0 !important; margin-bottom: 24px; }
 
-
-/* ============ INFO CARDS (optional) ============ */
+/* ================= INFO CARDS ================= */
 .info-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: var(--space-6);
 }
-/* ===== Make island tiles & info cards act as full clickable links ===== */
-.tile-link {
-  display: block;
-  color: inherit;        
-}
 
-.clickable { cursor: pointer; }
-
-.tile-link .island-tile,
-.tile-link .card.clickable {
-  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
-}
-
-.tile-link:hover .island-label { color: #26323c; }
-
-/* --- Research Islands title --- */
-.islands-header .heading2 {
-  color: #ffffff;  
-  font-size: 2.5rem;  
-  font-weight: 700;      
-  text-transform: uppercase; 
-}
-
-/* --- Six sites used as collection/observation areas --- */
-.islands-header .bodytext.dim {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 1.5rem;          
-  font-weight: 400;                    
-}
-/* Direction-aware fade/slide for island titles */
-.fade-title {
-  --from: 12px;                    /* JS overwrites this based on direction */
-  display: inline-block;           /* so transform only affects the text */
-  opacity: 0;
-  transform: translateY(var(--from));
-  transition:
-    transform .45s cubic-bezier(.22,.61,.36,1),
-    opacity   .45s ease-out;
-  will-change: transform, opacity;
-}
-
-.fade-title.in-view {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* Reduced motion accessibility */
-@media (prefers-reduced-motion: reduce) {
-  .fade-title,
-  .fade-title.in-view {
-    transition: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-  }
-}
+/* Links */
+.tile-link { display: block; color: inherit; }
