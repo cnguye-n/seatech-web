@@ -38,14 +38,14 @@ export default function Homepage() {
   useEffect(() => {
     const titles = document.querySelectorAll<HTMLElement>(".fade-title");
     let lastY = window.scrollY;
-  
+
     const io = new IntersectionObserver(
       (entries) => {
         const dir = window.scrollY > lastY ? "down" : "up";
-  
+
         entries.forEach((entry) => {
           const el = entry.target as HTMLElement;
-  
+
           if (entry.isIntersecting) {
             // entering viewport:
             // scrolling down  → fade up   (start from +12px)
@@ -59,12 +59,12 @@ export default function Homepage() {
             el.classList.remove("in-view");
           }
         });
-  
+
         lastY = window.scrollY;
       },
       { threshold: 0.25, rootMargin: "0px 0px -10% 0px" }
     );
-  
+
     titles.forEach((t) => io.observe(t));
     return () => io.disconnect();
   }, []);
@@ -89,31 +89,31 @@ export default function Homepage() {
         </div>
       </section>
 
-
-      {/* ===== 3) ISLANDS (background image + 6 white squares) ===== */}
-      <section className="section islands">
-        <div className="islands-bg">
-          <div className="container">
+  {/* ===== 3) Islands section ===== */}
+      <section className="section islands parallax-block">
+        <div className="parallax-media" aria-hidden />
+        <div className="container parallax-content">
+          <div className="islands-sticky">
             <Reveal effect="fade-in">
               <div className="islands-header">
                 <p className="heading2">Research Islands</p>
                 <p className="bodytext dim">Six sites used as collection/observation areas.</p>
               </div>
             </Reveal>
+          </div>
 
-            <div className="islands-grid">
-              {islands.map((island, i) => (
-                <Link key={island.slug} to={`/islands#${island.slug}`} className="tile-link">
-                  <div className="island-tile">
-                    <span className="island-label fade-title">{island.name}</span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-
+          <div className="islands-grid">
+            {islands.map((island) => (
+              <Link key={island.slug} to={`/islands#${island.slug}`} className="tile-link">
+                <div className="island-tile">
+                  <span className="island-label fade-title">{island.name}</span>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
+      Ç
 
       {/* ===== 4) INFO CARDS (optional, like Nicepage) ===== */}
       <section className="section info">
