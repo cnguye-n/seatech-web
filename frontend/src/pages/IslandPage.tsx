@@ -2,6 +2,11 @@ import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import MapComponent from "../components/Map/MapComponent";
 import IslandCard from "../components/IslandCard/IslandCard";
+import Reveal from "../components/Reveal/Reveal";
+
+
+
+
 
 type Island = {
   id: string;
@@ -85,6 +90,11 @@ export default function IslandsPage() {
 
         {/* One IslandCard per island (inside the container) */}
         {islands.map((it, idx) => (
+           <Reveal
+            key={it.id}
+            effect="scale-in"    // 👈 pops in as it appears
+            delay={idx * 100}    // staggered by index
+            >
           <div key={it.id}>
             {idx === 0 && <div className="islands-top-spacer" aria-hidden />}
             <div id={it.id} className="anchor-target" />
@@ -95,6 +105,7 @@ export default function IslandsPage() {
               facts={it.facts}   // lat/lng + optional area & elevation
             />
           </div>
+          </Reveal>
         ))}
       </div>
     </main>

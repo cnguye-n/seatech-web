@@ -45,13 +45,18 @@
   grid-template-columns: 1.2fr 0.9fr;
   gap: var(--space-8);
   align-items: start;
+  border-radius: 16px;
+  padding: var(--space-6);
+
+  /* ✨ Solid Dew Kiss gradient background */
   background: linear-gradient(
     135deg,
-    rgba(255, 140, 190, 0.12),
-    rgba(255, 120, 180, 0.06)
+    #EEC4CE 0%,   /* Orchid Pink */
+    #D8BEAB 100%  /* Dark Vanilla */
   );
-  border-radius: 12px;
-  padding: var(--space-6);
+
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  color: #fff; /* optional for readability */
 }
 
 
@@ -61,9 +66,11 @@
 
 /* Transparent grey for the right info box (map + facts) */
 .islandcard__box {
-  padding: var(--space-4);
-  background: rgba(0, 0, 0, 0.35);              /* translucent grey */
-  border: 1px solid rgba(255, 255, 255, 0.08);  /* subtle edge */
+  background: rgba(30, 30, 30, 0.45); /* transparent dark grey */
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  backdrop-filter: blur(8px);         /* frosted effect */
+  color: white;
 }
 
 .islandcard__mapwrap {
