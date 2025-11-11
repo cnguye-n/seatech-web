@@ -1,0 +1,107 @@
+/* wrapper */
+.islandcard {
+  background: var(--color-darkgrey);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: clamp(16px, 3vw, 28px);
+  margin-block: var(--space-8);
+}
+
+/* header */
+.islandcard__header {
+  text-align: center;
+}
+.islandcard__title {
+  margin: 0 0 var(--space-3);
+}
+
+/* OMBRE/GRADIENT RULE (darker center, lighter ends) */
+.islandcard__rule {
+  display: block;
+  height: 3px;
+  width: min(680px, 90%);
+  margin: 0 auto var(--space-4);
+  border-radius: 999px;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 120, 180, 1) 0%,     /* darker center pink */
+    rgba(255, 160, 200, 0.9) 45%,  /* mid pink */
+    rgba(255, 255, 255, 0.25) 100% /* fade to light */
+  );
+  opacity: 0.95;
+}
+
+/* subtitle text under the rule */
+.islandcard__subtitle {
+  text-align: center;
+  font-style: italic;
+  margin: 0 0 var(--space-6);
+  color: var(--color-text);
+}
+
+/* body layout: big free area left + infobox right */
+.islandcard__body {
+  display: grid;
+  grid-template-columns: 1.2fr 0.9fr;
+  gap: var(--space-8);
+  align-items: start;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 140, 190, 0.12),
+    rgba(255, 120, 180, 0.06)
+  );
+  border-radius: 12px;
+  padding: var(--space-6);
+}
+
+.islandcard__left {
+  min-height: 220px; /* just to suggest space; remove if not needed */
+}
+
+/* Transparent grey for the right info box (map + facts) */
+.islandcard__box {
+  padding: var(--space-4);
+  background: rgba(0, 0, 0, 0.35);              /* translucent grey */
+  border: 1px solid rgba(255, 255, 255, 0.08);  /* subtle edge */
+}
+
+.islandcard__mapwrap {
+  aspect-ratio: 1 / 1;         /* square */
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  margin-bottom: var(--space-4);
+}
+.islandcard__map {
+  width: 100%;
+  height: 100%;
+}
+
+/* facts like Wikipedia infobox */
+.islandcard__facts {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+.fact {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 12px;
+}
+.islandcard__facts dt {
+  color: var(--color-text-dim);
+  font-weight: 600;
+}
+.islandcard__facts dd {
+  margin: 0;
+}
+
+/* responsive stack */
+@media (max-width: 900px) {
+  .islandcard__body {
+    grid-template-columns: 1fr;
+  }
+  .fact { grid-template-columns: 1fr; }
+}
+
+
