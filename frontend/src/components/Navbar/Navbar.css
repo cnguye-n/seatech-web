@@ -58,7 +58,7 @@
   line-height: 1;
   padding: 0 18px;               /* horizontal breathing room */
   height: 64px;                  /* aligns with bar height */
-  font-size: clamp(15px, 1.05vw, 18px); /* responsive like Nicepage */
+  font-size: clamp(25px, 1.05vw, 18px); /* responsive like Nicepage */
   transition: color .15s ease, transform .15s ease;
 }
 
