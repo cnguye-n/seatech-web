@@ -113,7 +113,6 @@ export default function Homepage() {
           </div>
         </div>
       </section>
-      Ç
 
       {/* ===== 4) INFO CARDS (optional, like Nicepage) ===== */}
       <section className="section info">
