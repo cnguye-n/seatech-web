@@ -5,6 +5,7 @@ import Homepage from './pages/homepage';
 import IslandPage from './pages/IslandPage';
 import About from './pages/About';
 import TurtlePage from './pages/TurtlePage';
+import Login from './pages/login';
 import SensorPage from './pages/SensorPage';
 
 export default function App() {
@@ -17,6 +18,7 @@ export default function App() {
           <Route path="/about" element={<About />} />
           <Route path="/turtles" element={<TurtlePage />} />
           <Route path="/sensor" element={<SensorPage />} />
+          <Route path="/login" element={<Login />} />
           {/* more routes here */}
         </Routes>
       </AppContainer>

@@ -1,6 +1,17 @@
 # seatech-web
 Senior Capstone Project
 
+## SEAtech Web — Dev Best Practices
+Make sure you update your main everytime. You can do git pull or click on the bottom on the very left bottom of your visual studio code screen
+
+<img width="825" height="334" alt="image" src="https://github.com/user-attachments/assets/03d59705-015b-40da-9862-128e57b06b21" />
+-the 8 with the arrow downward in this images means there are 8 commits behind so click the downward arrow to update main
+
+After creating a branch from main, push the branch to remote. You click on the cloud arrow to publish it
+<img width="957" height="408" alt="image" src="https://github.com/user-attachments/assets/8fb182eb-272b-4b80-8f80-df288c7131fb" />
+
+
+
 ## SEAtech Web — Dev Setup
 ### Prerequisites
 - **Git**
