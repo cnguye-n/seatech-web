@@ -33,7 +33,7 @@
   margin-bottom: 0.5rem;
   font-weight: 700;
   text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
-  font-size: clamp(6rem, 12vw, 12rem);
+  font-size: clamp(2rem, 8vw, 9rem);
 }
 .hero-gallery-text .bodytext {
   font-size: clamp(1rem, 3vw, 3rem);
@@ -94,12 +94,12 @@
 }
 .island-tile {
   display: flex; align-items: center; justify-content: center;
-  gap: 24px; background: transparent; padding: 20px 28px; min-height: 140px;
+  gap: 14px; background: transparent; padding: 20px 28px; min-height: 140px;
   transition: transform .2s ease, box-shadow .2s ease;
 }
 .island-label {
-  color: #dddddd; font-weight: 800; font-size: 2.5rem; letter-spacing: .4px;
-  transition: transform .25s ease, text-shadow .25s ease, color .25s ease;
+  color: #dddddd; font-weight: 1000 !important; font-size: clamp(1rem, 2vw, 3rem) !important;letter-spacing: .4px;
+  transition: transform .25s ease, text-shadow .25s ease, color .25s ease; background: transparent !important;
 }
 .tile-link:hover .island-label {
   transform: scale(1.1);
@@ -123,8 +123,8 @@
 
 /* Parallax */
 .parallax-block {
-  position: relative;
-  height: 200vh;          /* adjust for how long image stays pinned */
+  min-height: 100vh;        /* let the section grow with content */
+  height: auto;             /* ensures it's not capped */
   overflow: clip;
   isolation: isolate;
 }
@@ -139,7 +139,6 @@
   content: '';
   position: absolute;
   inset: 0;
- 
   z-index: 1;
   filter: saturate(0.25);   /* 0 = grayscale, 1 = normal color */
   mix-blend-mode: soft-light;
@@ -149,6 +148,7 @@
   position: relative;
   z-index: 2;
   padding-block: clamp(48px, 10vw, 120px);
+  padding-bottom: 35vh; 
 }
 .islands-sticky {
   position: sticky;
@@ -161,8 +161,12 @@
 
 /* ================= INFO CARDS ================= */
 .info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 800px;
+  margin-inline: auto;
+  padding-inline: 1rem;
   gap: var(--space-6);
 }
 
