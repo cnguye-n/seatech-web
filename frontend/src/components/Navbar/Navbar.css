@@ -51,7 +51,7 @@
 .nav-link-static {
   display: inline-flex;
   align-items: center;
-  color: #f3f5f8;                /* soft white like Nicepage text */
+  color: #b9e3f9;                /* soft white like Nicepage text */
   text-decoration: none; /* no underline */
   font-weight: 800;
   line-height: 1;
