@@ -5,7 +5,12 @@
   left: 0;
   right: 0;         /* or width: 100% */
   z-index: 10000;  
-  background: transparent;
+  background: rgba(0, 0, 0, 0.20); /* black at 35% opacity */
+  backdrop-filter: blur(2px);      /* optional: frosted-glass blur */
+  -webkit-backdrop-filter: blur(2px);
+
+  color: var(--color-white);
+  transition: background 0.3s ease, backdrop-filter 0.3s ease;
 
 }
 .nav-inner {
@@ -20,7 +25,7 @@
 
 /* ===== Logo ===== */
 .nav-logo {
-  color: var(--color-white);
+  color: var(--color-primary);
   font-weight: 600;
   letter-spacing: .5px;
   text-decoration: none;
@@ -51,7 +56,7 @@
 .nav-link-static {
   display: inline-flex;
   align-items: center;
-  color: #b9e3f9;                /* soft white like Nicepage text */
+  color: var(--color-white);                /* soft white like Nicepage text */
   text-decoration: none; /* no underline */
   font-weight: 800;
   line-height: 1;
@@ -64,14 +69,14 @@
 /* hover “pop” + color shift */
 .nav-link:hover,
 .nav-link-static:hover {
-  color: var(--color-text);   /* your blue */
+  color: var(--color-primary);   /* your blue */
   transform: translateY(-1px);   /* subtle pop */
   text-decoration: none; /* no underline even on hover */
 }
 
 /* active = blue (route-aware via NavLink) */
 .nav-link.active {
-  color: var(--color-text);
+  color: var(--color-primary);
   text-decoration: none; 
 }
 

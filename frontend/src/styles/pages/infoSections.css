@@ -50,13 +50,13 @@
 
 /* Hover/focus polish */
 .cta-row:hover { transform: translateY(-2px); }
-.cta-row:hover .cta-title { color: var(--brand-blue, #016698); }
+.cta-row:hover .cta-title { color: var(--color-primary); }
 .cta-row:hover .cta-icon {
   transform: scale(1.06);
   filter: drop-shadow(0 0 10px rgba(1,102,152,.25));
 }
 .cta-row:focus-visible {
-  outline: 3px solid var(--brand-blue, #016698);
+  outline: 3px solid var(--color-primary);
   outline-offset: 6px;
   border-radius: 12px;
 }
@@ -67,7 +67,7 @@
 .cta-icon {
   width: clamp(160px, 22vw, 300px);
   height: clamp(160px, 22vw, 300px);
-  background: var(--brand-blue, #016698);
+  background: var(--color-primary);
   transition: transform .18s ease, filter .18s ease;
   flex-shrink: 0;
 }
