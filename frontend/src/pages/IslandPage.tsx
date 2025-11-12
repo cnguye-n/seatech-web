@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import MapComponent from "../components/Map/MapComponent";
 
 type Island = { id: string; name: string; image: string; description: string };
 
@@ -45,7 +46,7 @@ export default function IslandsPage() {
       <div className="container">
         <p className="heading1">Research Islands</p>
         <p className="bodytext">Tracking sea turtles across Colombia’s remote Caribbean islands.</p>
-
+        <MapComponent />
         {islands.map((island, idx) => (
           <div key={island.id}>
             {/* spacer only before the first island anchor */}
