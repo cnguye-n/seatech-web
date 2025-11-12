@@ -89,6 +89,8 @@ export default function Homepage() {
         </div>
       </section>
 
+      <section className="vh-spacer" aria-hidden />
+
   {/* ===== 3) Islands section ===== */}
       <section className="section islands parallax-block">
         <div className="parallax-media" aria-hidden />

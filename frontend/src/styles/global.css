@@ -79,7 +79,7 @@
   --color-white: #ffffff;
 
   /* ===== Text colors ===== */
-  --color-text: #e6e6e6;            /* main light text */
+  --color-text: #000000;            /* main light text */
   --color-text-dim: #b4b4b4;        /* secondary/muted text */
   --color-border: #26323c;          /* thin borders */
 
@@ -143,7 +143,7 @@ body {
   font-size: var(--font-size-root);
   line-height: 1.6;
   color: var(--color-text);
-  background: var(--color-black);
+  background: var(--color-white);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -182,7 +182,7 @@ code, pre {
   min-height: 100dvh;         /* fill the viewport vertically */
   display: flex;              /* stack header, main, footer */
   flex-direction: column;
-  background: var(--color-black);
+  background: var(--color-white);
 }
 
 /* <main> expands to take remaining vertical space */

@@ -2,7 +2,7 @@
 .hero-gallery {
   padding: 0;
   margin-top: 0;
-  margin-bottom: 10rem;
+  margin-bottom: 0rem;
   position: relative;
 }
 .hero-gallery .fg-viewport {
@@ -131,6 +131,16 @@
   background: url("/images/island-section.png") center/cover no-repeat;
   z-index: 1;
 }
+.parallax-media::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+ 
+  z-index: 1;
+  filter: saturate(0.25);   /* 0 = grayscale, 1 = normal color */
+  mix-blend-mode: soft-light;
+}
+
 .parallax-content {
   position: relative;
   z-index: 2;
@@ -154,3 +164,8 @@
 
 /* Links */
 .tile-link { display: block; color: inherit; }
+
+.vh-spacer {
+  min-height: 100vh;   /* full viewport height */
+  background: var(--color-white); 
+}
