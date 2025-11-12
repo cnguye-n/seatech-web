@@ -1,5 +1,7 @@
 /* ================= HERO (full-bleed gallery) ================= */
 .hero-gallery {
+  margin-top: calc(-1 * var(--nav-h)); /* pulls hero up under the nav */
+  padding-top: var(--nav-h);  
   padding: 0;
   margin-top: 0;
   margin-bottom: 0rem;
@@ -165,7 +167,3 @@
 /* Links */
 .tile-link { display: block; color: inherit; }
 
-.vh-spacer {
-  min-height: 100vh;   /* full viewport height */
-  background: var(--color-white); 
-}

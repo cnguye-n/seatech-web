@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import "../styles/pages/homepage.css";
+import "../styles/pages/infoSections.css";
 import Reveal from "../components/Reveal/Reveal";
 import FullBleedGallery, { type GalleryItem } from "../components/PhotoGallery";
 
@@ -89,9 +90,39 @@ export default function Homepage() {
         </div>
       </section>
 
-      <section className="vh-spacer" aria-hidden />
+      <section className="vh-spacer info-band">
+        <div className="container">
+          <div className="info-stack">
 
-  {/* ===== 3) Islands section ===== */}
+            {/* Turtle row — icon LEFT, text RIGHT */}
+            <Link to="/turtles" className="cta-row turtle">
+              <div className="cta-icon turtle-icon" aria-hidden="true" />
+              <div className="cta-text">
+                <p className="cta-title">Turtle</p>
+                <p className="cta-sub">
+                  Our research focuses on tagging turtles in Colombia.
+                </p>
+              </div>
+            </Link>
+
+            {/* Sensor row — text LEFT, icon RIGHT */}
+            <Link to="/sensor" className="cta-row sensor">
+              <div className="cta-text">
+                <p className="cta-title">Sensor</p>
+                <p className="cta-sub">
+                  Our sensor system provides real-time tracking and environmental monitoring
+                  for turtle conservation.
+                </p>
+              </div>
+              <div className="cta-icon sensor-icon" aria-hidden="true" />
+            </Link>
+
+          </div>
+        </div>
+      </section>
+
+
+      {/* ===== 3) Islands section ===== */}
       <section className="section islands parallax-block">
         <div className="parallax-media" aria-hidden />
         <div className="container parallax-content">
