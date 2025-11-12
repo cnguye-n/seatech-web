@@ -85,7 +85,7 @@ export default function Homepage() {
           {/* Overlay text */}
           <div className="hero-gallery-text">
             <p className="heading1">SEAtech</p>
-            <p className="bodytext">This is our project.</p>
+            <p className="bodytext">Technology powering marine conservation</p>
           </div>
         </div>
       </section>
