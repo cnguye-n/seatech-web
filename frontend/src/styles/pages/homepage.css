@@ -167,3 +167,71 @@
 /* Links */
 .tile-link { display: block; color: inherit; }
 
+/* ================= ABOUT US SECTION (Full Viewport) ================= */
+.vh-spacer.about-band {
+  min-height: 100svh;             /* fills full viewport height */
+  display: flex;
+  align-items: center;            /* vertical center */
+  justify-content: center;        /* horizontal center */
+  background: transparent;        /* keep consistent with your theme */
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+/* Container alignment & width */
+.about-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding-inline: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Title */
+.about-title {
+  font-size: clamp(3rem, 5vw, 4rem);
+  font-weight: 800;
+  color: var(--brand-blue, #016698);
+  margin-bottom: 2rem;
+}
+
+/* Body text */
+.about-text {
+  font-size: 2rem;
+  line-height: 1.8;
+  color: var(--color-text, #2a2a2a);
+  margin-bottom: 3rem;
+  max-width: 60ch;
+}
+
+/* Learn More button */
+.about-btn {
+  display: inline-block;
+  padding: 0.9rem 2.2rem;
+  background-color: var(--brand-blue, #016698);
+  color: #fff;
+  font-weight: 600;
+  border-radius: 35px;
+  text-decoration: none;
+  transition: background-color 0.25s ease, transform 0.25s ease;
+}
+
+.about-btn:hover {
+  background-color: #025989;  /* slightly darker blue */
+  transform: translateY(-2px);
+}
+
+/* Responsive behavior */
+@media (max-width: 768px) {
+  .about-title {
+    font-size: clamp(2rem, 6vw, 2.5rem);
+  }
+
+  .about-text {
+    font-size: 1rem;
+    padding-inline: 1rem;
+  }
+}

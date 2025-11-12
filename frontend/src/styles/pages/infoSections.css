@@ -85,16 +85,17 @@
 /* ============================================
    Text
    ============================================ */
-.cta-text { max-width: 560px; }
+.cta-text { max-width: 580px; }
 .cta-title {
   margin: 0 0 .5rem;
   font-weight: 800;
-  font-size: clamp(1.25rem, 2vw, 1.75rem);
+  font-size: clamp(3rem, 5vw, 4rem);
   line-height: 1.25;
+  text-align: center; 
 }
 .cta-sub {
   margin: 0;
-  font-size: clamp(.95rem, 1.1vw, 1.125rem);
+  font-size: 2rem;
   line-height: 1.6;
 }
 

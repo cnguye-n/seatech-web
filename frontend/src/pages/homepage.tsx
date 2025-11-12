@@ -147,36 +147,24 @@ export default function Homepage() {
         </div>
       </section>
 
-      {/* ===== 4) INFO CARDS (optional, like Nicepage) ===== */}
-      <section className="section info">
-        <div className="container info-grid">
-          <Link to="/turtles" className="tile-link">
-            <div className="card">
-              <p className="heading3">Turtle</p>
-              <p className="bodytext">Our research focuses on tagging turtles in Colombia.</p>
-            </div>
-          </Link>
+      {/* ===== 4) About Us Section ===== */}
+      <section className="vh-spacer about-band">
+        <div className="container about-container">
+          <h2 className="about-title">About Us</h2>
 
-          <Link to="/about" className="tile-link">
-            <div className="card">
-              <p className="heading3">About Us</p>
-              <p className="bodytext">A team dedicated to marine tracking and conservation.</p>
-            </div>
-          </Link>
-          <Link to="/islands#island-1" className="tile-link">
-            <div className="card">
-              <p className="heading3">Island 1</p>
-              <p className="bodytext">Tagging turtles in coastal sites of Colombia.</p>
-            </div>
-          </Link>
-          <Link to="/islands#island-2" className="tile-link">
-            <div className="card">
-              <p className="heading3">Island 2</p>
-              <p className="bodytext">Navigation and exploration of sea turtle habitats.</p>
-            </div>
+          <p className="about-text">
+            At SEAtech, our mission is to advance marine conservation through innovative technology.
+            Our team of dedicated researchers, engineers, and conservationists work together to
+            monitor sea turtle migration and promote sustainable ocean practices.
+          </p>
+
+          <Link to="/about" className="about-btn">
+            Learn More
           </Link>
         </div>
       </section>
+
+
     </div>
   );
 }
