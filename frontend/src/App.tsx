@@ -6,9 +6,22 @@ import IslandPage from './pages/IslandPage';
 import About from './pages/About';
 import TurtlePage from './pages/TurtlePage';
 import Login from './pages/login';
+import { useEffect, useState } from 'react';
 import SensorPage from './pages/SensorPage';
 
 export default function App() {
+  /* BACKEND */
+  const API = import.meta.env.VITE_API_URL;
+  const [health, setHealth] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('${API}/api/health')
+      .then(r => r.json())
+      .then(setHealth)
+      .catch(e => console.error('Backend connection failed:', e));
+  }, []);
+
+
   return (
     <BrowserRouter>
       <AppContainer>
@@ -25,4 +38,3 @@ export default function App() {
     </BrowserRouter>
   );
 }
-
