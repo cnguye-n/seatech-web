@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npm run dev --prefix frontend\" \"npm run dev --prefix backend\"",
-    "frontend": "npm run dev --prefix frontend",
-    "backend": "npm run dev --prefix backend"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:backend": "backend/venv/bin/python backend/app.py",
+    "dev": "concurrently \"npm:dev:frontend\" \"npm:dev:backend\""
   },
   "keywords": [],
   "author": "",

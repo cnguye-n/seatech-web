@@ -11,20 +11,17 @@ import SensorPage from './pages/SensorPage';
 
 export default function App() {
   /* BACKEND */
-  const [health, setHealth] = useState<any>(null);
   const API = import.meta.env.VITE_API_URL;
+  const [health, setHealth] = useState<any>(null);
 
   useEffect(() => {
     fetch('${API}/api/health')
-      .then(res=> res.json())
-      .then(data => {
-        console.log('Backend health', data);
-        setHealth(data);
-      })
-      .catch(err => console.error('Backend connection failed:', err));
-  }, [API]);
+      .then(r => r.json())
+      .then(setHealth)
+      .catch(e => console.error('Backend connection failed:', e));
+  }, []);
 
-  
+
   return (
     <BrowserRouter>
       <AppContainer>
