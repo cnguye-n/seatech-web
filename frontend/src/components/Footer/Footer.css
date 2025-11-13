@@ -1,9 +1,8 @@
 /* src/components/Footer/Footer.css */
 
 .footer {
-  background: var(--color-black);
+  background: var(--color-white);
   color: var(--color-text);
-  border-top: 1px solid var(--color-border);
 }
 
 .footer-inner {

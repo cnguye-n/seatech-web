@@ -69,7 +69,7 @@
    ---------------------------------------------------------- */
 :root {
   /* ===== Brand colors ===== */
-  --color-primary: #6ea7f9;         /* main blue accent (links, highlights) */
+  --color-primary: #016698;         /* main blue accent (links, highlights) */
   --color-primary-hover: #8bb8fa;   /* lighter hover blue */
 
   /* ===== Neutral colors ===== */
@@ -79,7 +79,7 @@
   --color-white: #ffffff;
 
   /* ===== Text colors ===== */
-  --color-text: #e6e6e6;            /* main light text */
+  --color-text: #000000;            /* main light text */
   --color-text-dim: #b4b4b4;        /* secondary/muted text */
   --color-border: #26323c;          /* thin borders */
 
@@ -123,6 +123,9 @@
   /* ===== Container sizing ===== */
   --container-max: 1200px;  /* maximum width for large screens */
   --container-pad: 1rem;    /* side padding for mobile */
+
+  /* ===== Navbar sizing ===== */
+  :root { --nav-h: 80px; } 
 }
 
 /* ----------------------------------------------------------
@@ -140,7 +143,7 @@ body {
   font-size: var(--font-size-root);
   line-height: 1.6;
   color: var(--color-text);
-  background: var(--color-black);
+  background: var(--color-white);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -179,7 +182,7 @@ code, pre {
   min-height: 100dvh;         /* fill the viewport vertically */
   display: flex;              /* stack header, main, footer */
   flex-direction: column;
-  background: var(--color-black);
+  background: var(--color-white);
 }
 
 /* <main> expands to take remaining vertical space */
@@ -357,6 +360,4 @@ code, pre {
   .reveal { opacity: 1 !important; transform: none !important; }
 }
 .app > main,
-main {
-  padding-top: 64px;   /* must match .nav-inner height */
-}
+main { padding-top: var(--nav-h); }

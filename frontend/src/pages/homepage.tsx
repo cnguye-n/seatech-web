@@ -1,8 +1,9 @@
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import "../styles/pages/homepage.css";
+import "../styles/pages/infoSections.css";
 import Reveal from "../components/Reveal/Reveal";
-import Gallery, { type GalleryItem } from "../components/Gallery/Gallery";
-
+import FullBleedGallery, { type GalleryItem } from "../components/PhotoGallery";
 
 export default function Homepage() {
   const islands = [
@@ -14,133 +15,156 @@ export default function Homepage() {
     { name: "Isla Menor Cayo Albuquerque", slug: "island-6" },
   ];
   const galleryImages: GalleryItem[] = [
-    {
-      src: "/images/turtle1.jpg",
-      alt: "Sea turtle swimming over coral reef",
-      title: "Sea Turtle Swimming",
-      caption: "A turtle exploring the coral reef.",
-    },
+    /* {
+       src: "/images/turtle1.jpg",
+       alt: "Sea turtle swimming over coral reef",
+     },*/
     {
       src: "/images/turtle2.jpg",
       alt: "Sea turtle near the surface of shallow water",
-      title: "Shallow Waters",
-      caption: "Captured near San Andrés island.",
     },
     {
       src: "/images/turtle3.jpg",
       alt: "Sea turtle gliding above coral formations",
-      title: "Reef Zone",
-      caption: "Turtle gliding above coral formations.",
     },
     {
       src: "/images/turtle4goodbackground.jpg",
       alt: "Turtle resting on the seabed",
-      title: "Resting Spot",
-      caption: "A turtle resting on the sandy seabed.",
     },
     {
       src: "/images/turtle5goodbackground.jpeg",
       alt: "Sea turtle surfacing for air",
-      title: "Surface Break",
-      caption: "Sea turtle surfacing for air.",
     },
   ];
+  useEffect(() => {
+    const titles = document.querySelectorAll<HTMLElement>(".fade-title");
+    let lastY = window.scrollY;
 
+    const io = new IntersectionObserver(
+      (entries) => {
+        const dir = window.scrollY > lastY ? "down" : "up";
+
+        entries.forEach((entry) => {
+          const el = entry.target as HTMLElement;
+
+          if (entry.isIntersecting) {
+            // entering viewport:
+            // scrolling down  → fade up   (start from +12px)
+            // scrolling up    → fade down (start from -12px)
+            el.style.setProperty("--from", dir === "down" ? "12px" : "-12px");
+            el.classList.add("in-view");
+          } else {
+            // leaving viewport:
+            // set opposite so it fades out in the scroll direction
+            el.style.setProperty("--from", dir === "down" ? "-12px" : "12px");
+            el.classList.remove("in-view");
+          }
+        });
+
+        lastY = window.scrollY;
+      },
+      { threshold: 0.25, rootMargin: "0px 0px -10% 0px" }
+    );
+
+    titles.forEach((t) => io.observe(t));
+    return () => io.disconnect();
+  }, []);
 
   return (
     <div className="homepage">
       {/* ===== 1) HERO ===== */}
-      <section className="section hero">
-        <div className="hero-overlay">
-          <div className="container hero-content">
-            <Reveal effect="fade-up">  {/* THE EFFECT ONLY HAPPENS ONCE IDK HOW TO MAKE IT REPEAT */}
-              <p className="heading1">Homepage</p>
-            </Reveal>
-            <Reveal effect="fade-up">
-              <p className="bodytext">
-                This is our project.
-              </p>
-            </Reveal>
+      <section className="section hero-gallery">
+        <div className="hero-gallery-wrapper">
+          <FullBleedGallery
+            images={galleryImages}
+            aspectRatio="3/2"      // adjust to make it taller/shorter
+            autoPlay={true}
+            autoPlayMs={5000}
+          />
+
+          {/* Overlay text */}
+          <div className="hero-gallery-text">
+            <p className="heading1">SEAtech</p>
+            <p className="bodytext">Technology powering marine conservation</p>
           </div>
         </div>
       </section>
 
-      {/* ===== 2) GALLERY ===== THIS NEEDS WORK*/}
-      <section className="section gallery">
+      <section className="vh-spacer info-band">
         <div className="container">
-          <Reveal effect="fade-in">
-            <p className="heading2 mb-4">Gallery</p>
-          </Reveal>
+          <div className="info-stack">
 
-          <Reveal effect="scale-in" delay={80}>
-            <Gallery
-              images={galleryImages}
-              aspectRatio="16 / 9"
-              autoPlay={false}
-            />
-          </Reveal>
+            {/* Turtle row — icon LEFT, text RIGHT */}
+            <Link to="/turtles" className="cta-row turtle">
+              <div className="cta-icon turtle-icon" aria-hidden="true" />
+              <div className="cta-text">
+                <p className="cta-title">Turtle</p>
+                <p className="cta-sub">
+                  Our research focuses on tagging turtles in Colombia.
+                </p>
+              </div>
+            </Link>
+
+            {/* Sensor row — text LEFT, icon RIGHT */}
+            <Link to="/sensor" className="cta-row sensor">
+              <div className="cta-text">
+                <p className="cta-title">Sensor</p>
+                <p className="cta-sub">
+                  Our sensor system provides real-time tracking and environmental monitoring
+                  for turtle conservation.
+                </p>
+              </div>
+              <div className="cta-icon sensor-icon" aria-hidden="true" />
+            </Link>
+
+          </div>
         </div>
       </section>
 
 
-      {/* ===== 3) ISLANDS (background image + 6 white squares) ===== */}
-      <section className="section islands">
-        <div className="islands-bg">
-          <div className="container">
+      {/* ===== 3) Islands section ===== */}
+      <section className="section islands parallax-block">
+        <div className="parallax-media" aria-hidden />
+        <div className="container parallax-content">
+          <div className="islands-sticky">
             <Reveal effect="fade-in">
               <div className="islands-header">
                 <p className="heading2">Research Islands</p>
                 <p className="bodytext dim">Six sites used as collection/observation areas.</p>
               </div>
             </Reveal>
+          </div>
 
-            <div className="islands-grid">
-              {islands.map((island, i) => (
-                <Reveal key={island.slug} effect="scale-in" delay={i * 120}>
-                  <Link to={`/islands#${island.slug}`} className="tile-link">
-
-                    <div className="island-tile clickable">
-                      <div className="island-icon">🧭</div>
-                      <span className="island-label">{island.name}</span>
-                    </div>
-                  </Link>
-                </Reveal>
-              ))}
-            </div>
+          <div className="islands-grid">
+            {islands.map((island) => (
+              <Link key={island.slug} to={`/islands#${island.slug}`} className="tile-link">
+                <div className="island-tile">
+                  <span className="island-label fade-title">{island.name}</span>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ===== 4) INFO CARDS (optional, like Nicepage) ===== */}
-      <section className="section info">
-        <div className="container info-grid">
-          <Link to="/turtles" className="tile-link">
-            <div className="card">
-              <p className="heading3">Turtle</p>
-              <p className="bodytext">Our research focuses on tagging turtles in Colombia.</p>
-            </div>
-          </Link>
+      {/* ===== 4) About Us Section ===== */}
+      <section className="vh-spacer about-band">
+        <div className="container about-container">
+          <h2 className="about-title">About Us</h2>
 
-          <Link to="/about" className="tile-link">
-            <div className="card">
-              <p className="heading3">About Us</p>
-              <p className="bodytext">A team dedicated to marine tracking and conservation.</p>
-            </div>
-          </Link>
-          <Link to="/islands#island-1" className="tile-link">
-            <div className="card">
-              <p className="heading3">Island 1</p>
-              <p className="bodytext">Tagging turtles in coastal sites of Colombia.</p>
-            </div>
-          </Link>
-          <Link to="/islands#island-2" className="tile-link">
-            <div className="card">
-              <p className="heading3">Island 2</p>
-              <p className="bodytext">Navigation and exploration of sea turtle habitats.</p>
-            </div>
+          <p className="about-text">
+            At SEAtech, our mission is to advance marine conservation through innovative technology.
+            Our team of dedicated researchers, engineers, and conservationists work together to
+            monitor sea turtle migration and promote sustainable ocean practices.
+          </p>
+
+          <Link to="/about" className="about-btn">
+            Learn More
           </Link>
         </div>
       </section>
+
+
     </div>
   );
 }

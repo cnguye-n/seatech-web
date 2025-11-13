@@ -5,13 +5,17 @@
   left: 0;
   right: 0;         /* or width: 100% */
   z-index: 10000;  
-  background: transparent; /* deep black like Nicepage header */
+  background: rgba(0, 0, 0, 0.20); /* black at 35% opacity */
+  backdrop-filter: blur(2px);      /* optional: frosted-glass blur */
+  -webkit-backdrop-filter: blur(2px);
+
   color: var(--color-white);
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  transition: background 0.3s ease, backdrop-filter 0.3s ease;
+
 }
 .nav-inner {
   width: 100%;
-  height: 80px;                 /* Nicepage-like height */
+  height: var(--nav-h);                /* Nicepage-like height */
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -21,7 +25,7 @@
 
 /* ===== Logo ===== */
 .nav-logo {
-  color: var(--color-white);
+  color: var(--color-primary);
   font-weight: 600;
   letter-spacing: .5px;
   text-decoration: none;
@@ -52,13 +56,13 @@
 .nav-link-static {
   display: inline-flex;
   align-items: center;
-  color: #f5f7fb;                /* soft white like Nicepage text */
+  color: var(--color-white);                /* soft white like Nicepage text */
   text-decoration: none; /* no underline */
-  font-weight: 500;
+  font-weight: 800;
   line-height: 1;
   padding: 0 18px;               /* horizontal breathing room */
   height: 64px;                  /* aligns with bar height */
-  font-size: clamp(15px, 1.05vw, 18px); /* responsive like Nicepage */
+  font-size: clamp(25px, 1.05vw, 18px); /* responsive like Nicepage */
   transition: color .15s ease, transform .15s ease;
 }
 

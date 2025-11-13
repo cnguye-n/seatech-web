@@ -1,0 +1,107 @@
+/* ============================================
+   Turtle + Sensor Info Sections (Viewport)
+   ============================================ */
+
+/* Full-viewport, transparent band that holds both rows */
+.vh-spacer.info-band {
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  background: transparent;     /* keep navbar looking transparent over hero */
+  position: relative;
+  z-index: 1;
+}
+
+/* Inner container uses your global sizing tokens */
+.vh-spacer.info-band > .container {
+  width: min(100%, var(--container-max));
+  margin-inline: auto;
+  padding-inline: var(--container-pad);
+}
+
+/* Stack Turtle row over Sensor row with generous vertical rhythm */
+.info-stack {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6vh, 10svh, 12vh);
+  width: 100%;
+}
+
+/* ============================================
+   Clickable Rows
+   ============================================ */
+.cta-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(2rem, 8vw, 6rem);
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: transform .18s ease;
+  outline: none;
+}
+
+/* Turtle: icon left, text right */
+.cta-row.turtle { flex-direction: row; }
+
+/* Sensor: text left, icon right */
+
+
+/* Hover/focus polish */
+.cta-row:hover { transform: translateY(-2px); }
+.cta-row:hover .cta-title { color: var(--color-primary); }
+.cta-row:hover .cta-icon {
+  transform: scale(1.06);
+  filter: drop-shadow(0 0 10px rgba(1,102,152,.25));
+}
+.cta-row:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 6px;
+  border-radius: 12px;
+}
+
+/* ============================================
+   Icons (masked blocks)
+   ============================================ */
+.cta-icon {
+  width: clamp(160px, 22vw, 300px);
+  height: clamp(160px, 22vw, 300px);
+  background: var(--color-primary);
+  transition: transform .18s ease, filter .18s ease;
+  flex-shrink: 0;
+}
+
+/* Mask images (update paths to your assets if needed) */
+.turtle-icon {
+  -webkit-mask: url("/images/turtleicon.png") center / contain no-repeat;
+          mask: url("/images/turtleicon.png") center / contain no-repeat;
+}
+.sensor-icon {
+  -webkit-mask: url("/images/sensoricon.png") center / contain no-repeat;
+          mask: url("/images/sensoricon.png") center / contain no-repeat;
+}
+
+/* ============================================
+   Text
+   ============================================ */
+.cta-text { max-width: 580px; }
+.cta-title {
+  margin: 0 0 .5rem;
+  font-weight: 800;
+  font-size: clamp(3rem, 5vw, 4rem);
+  line-height: 1.25;
+  text-align: center; 
+}
+.cta-sub {
+  margin: 0;
+  font-size: 2rem;
+  line-height: 1.6;
+}
+
+/* Mobile: stack each row vertically */
+@media (max-width: 768px) {
+  .cta-row { flex-direction: column; text-align: center; gap: 1.25rem; }
+  .cta-row.sensor { flex-direction: column; }
+  .cta-icon { width: clamp(140px, 35vw, 220px); height: clamp(140px, 35vw, 220px); }
+}

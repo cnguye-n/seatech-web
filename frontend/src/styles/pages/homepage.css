@@ -1,154 +1,243 @@
-/* ============ HERO ============ */
-/* Full-bleed hero image like Nicepage */
-.hero {
-  padding: 0;                     /* background handles spacing */
-}
-.hero-overlay {
-  background: url("/images/turtlewallpaper.jpg") center/cover no-repeat;
-}
-.hero-overlay::after {            /* subtle dark overlay for text readability */
-  content: "";
-  display: block;
-  background: linear-gradient(180deg, rgba(0,0,0,.25), rgba(0,0,0,.45));
-}
-.hero-content {
-  text-align: center;
-  color: var(--color-white);
-  padding-block: clamp(64px, 12vw, 160px);
-}
-.hero .heading1 { margin-bottom: var(--space-3); }
-
-/* ============ GALLERY ============ */
-.gallery {
-  background: var(--color-grey); /* light grey background */
-}
-
-.gallery .container {
-  padding-block: clamp(48px, 8vw, 100px);
-}
-
-.gallery .heading2 {
-  color: white; /* dark text for contrast */
-}
-
-.gallery .demo-card {
-  background: #ffffff;
-  border-radius: 10px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-  padding: var(--space-6);
-  max-width: 900px;
-  margin-inline: auto;
-  text-align: center;
-}
-
-/* ============ ISLANDS SECTION (background image + 6 squares) ============ */
-.islands { padding: 0; }          /* we want the bg to control spacing */
-.islands-bg {
-  background: url("/images/sanandres.jpeg") center/cover no-repeat;
+/* ================= HERO (full-bleed gallery) ================= */
+.hero-gallery {
+  margin-top: calc(-1 * var(--nav-h)); /* pulls hero up under the nav */
+  padding-top: var(--nav-h);  
+  padding: 0;
+  margin-top: 0;
+  margin-bottom: 0rem;
   position: relative;
 }
-.islands-bg::before {
-  content: "";
-  position: absolute; inset: 0;
-  background: rgba(0,0,0,0.25);
+.hero-gallery .fg-viewport {
+  height: 100vh;
+  aspect-ratio: unset;
+  border-radius: 0;
 }
+.hero-gallery-wrapper {
+  position: relative;
+  width: 100%;
+}
+.hero-gallery-wrapper .fullbleed-gallery {
+  position: relative;
+  z-index: 1;
+}
+.hero-gallery-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: white;
+  z-index: 2;
+}
+.hero-gallery-text .heading1 {
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  font-size: clamp(2rem, 8vw, 9rem);
+}
+.hero-gallery-text .bodytext {
+  font-size: clamp(1rem, 3vw, 3rem);
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  font-weight: 700;
+}
+
+/* FullBleedGallery core */
+.fullbleed-gallery { width: 100%; margin-inline: auto; }
+.fg-viewport { position: relative; width: 100%; overflow: hidden; border-radius: 0; }
+.fg-slide {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; opacity: 0; transform: scale(1.01);
+  transition: opacity .65s cubic-bezier(.22,.61,.36,1), transform 1.6s ease-out;
+}
+.fg-slide.is-active { opacity: 1; transform: scale(1); }
+.fg-nav {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: #fff; font-size: 2rem;
+  cursor: pointer; user-select: none; padding: 0; line-height: 1;
+  transition: color .2s ease;
+}
+.fg-prev { left: 12px; }
+.fg-next { right: 12px; }
+.fg-nav:hover { color: var(--color-primary); background: none; }
+.fg-dots {
+  position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 8px; z-index: 5;
+}
+.fg-dot {
+  -webkit-appearance: none; appearance: none; display: inline-block;
+  width: 10px; height: 10px; aspect-ratio: 1 / 1; padding: 0; margin: 0;
+  border: 0; border-radius: 50%;
+  background: rgba(255,255,255,0.45);
+  line-height: 0; cursor: pointer;
+  transition: transform .2s ease, background .2s ease;
+}
+.fg-dot.is-active { background: #fff; }
+
+/* ================= ISLANDS (parallax section) ================= */
+.islands { padding: 0; }
 .islands .container {
-  position: relative;             /* sit above overlay */
+  position: relative;
   padding-block: clamp(48px, 10vw, 120px);
 }
-
 .islands-header { text-align: center; margin-bottom: var(--space-8); }
-.islands-header .dim { color: var(--color-text-dim); }
+.islands-header .heading2 {
+  color: #ffffff; font-size: 2.5rem; font-weight: 700; text-transform: uppercase;
+}
+.islands-header .bodytext.dim {
+  color: rgba(255, 255, 255, 0.8); font-size: 1.5rem; font-weight: 400;
+}
 
-/* 6 white tiles on top of background image */
 .islands-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  justify-content: center;   /* centers the grid when not full width */
-  gap: clamp(32px, 4vw, 48px);
-  max-width: 1100px;
-  margin-inline: auto;
+  display: flex; flex-direction: column; justify-content: center;
+  gap: 24px; max-width: 800px; margin-inline: auto; padding-inline: 1rem;
 }
 .island-tile {
-  display: grid;
-  place-items: center;
-  aspect-ratio: 1 / 1;
-  min-width: 280px;   /* ⬅️ increase this for bigger squares */
-  min-height: 280px;  /* ⬅️ keeps them square */
-  border-radius: 6px;
-  background: #ffffff;
-  color: #d1656f;                 /* Nicepage-ish muted red for icon */
-  box-shadow: 0 8px 24px rgba(0,0,0,.18);
-  transition: transform .15s ease, box-shadow .15s ease;
-}
-.island-tile:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(0,0,0,.22);
-}
-.island-icon {
-  font-size: clamp(26px, 3vw, 34px);
-  margin-bottom: 6px;
+  display: flex; align-items: center; justify-content: center;
+  gap: 14px; background: transparent; padding: 20px 28px; min-height: 140px;
+  transition: transform .2s ease, box-shadow .2s ease;
 }
 .island-label {
-  color: #b04851;                 /* label under icon, Nicepage vibe */
-  font-weight: 600;
-  letter-spacing: .4px;
+  color: #dddddd; font-weight: 1000 !important; font-size: clamp(1rem, 2vw, 3rem) !important;letter-spacing: .4px;
+  transition: transform .25s ease, text-shadow .25s ease, color .25s ease; background: transparent !important;
+}
+.tile-link:hover .island-label {
+  transform: scale(1.1);
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
+  color: #ffffff;
 }
 
-
-/* REGARDING THE PHOTOS IN THE TILES */
-.island-photo {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;       /* fills square cleanly */
-  border-radius: 12px 12px 0 0;  /* rounded top only */
-  transition: transform 0.3s ease;
+/* Direction-aware fade */
+.fade-title {
+  --from: 12px;
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(var(--from));
+  transition: transform .45s cubic-bezier(.22,.61,.36,1), opacity .45s ease-out;
+  will-change: transform, opacity;
+}
+.fade-title.in-view { opacity: 1; transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  .fade-title, .fade-title.in-view { transition: none !important; opacity: 1 !important; transform: none !important; }
 }
 
-/* Responsive: stack 2 columns then 1 
-@media (max-width: 900px) {
-  .islands-grid { grid-template-columns: repeat(2, 1fr); }
+/* Parallax */
+.parallax-block {
+  min-height: 100vh;        /* let the section grow with content */
+  height: auto;             /* ensures it's not capped */
+  overflow: clip;
+  isolation: isolate;
 }
-@media (max-width: 520px) {
-  .islands-grid { grid-template-columns: 1fr; max-width: 420px; }
+.parallax-media {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  background: url("/images/island-section.png") center/cover no-repeat;
+  z-index: 1;
 }
-*/
+.parallax-media::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  filter: saturate(0.25);   /* 0 = grayscale, 1 = normal color */
+  mix-blend-mode: soft-light;
+}
 
+.parallax-content {
+  position: relative;
+  z-index: 2;
+  padding-block: clamp(48px, 10vw, 120px);
+  padding-bottom: 35vh; 
+}
+.islands-sticky {
+  position: sticky;
+  top: calc(var(--nav-h) + 100px);
+  z-index: 3;
+}
+.section.parallax-block .container,
+.parallax-content { padding-top: 0 !important; }
+.islands-header { margin-top: 0 !important; margin-bottom: 24px; }
 
-/* ============ INFO CARDS (optional) ============ */
+/* ================= INFO CARDS ================= */
 .info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 800px;
+  margin-inline: auto;
+  padding-inline: 1rem;
   gap: var(--space-6);
 }
-/* ===== Make island tiles & info cards act as full clickable links ===== */
-.tile-link {
-  display: block;
-  color: inherit;        
+
+/* Links */
+.tile-link { display: block; color: inherit; }
+
+/* ================= ABOUT US SECTION (Full Viewport) ================= */
+.vh-spacer.about-band {
+  min-height: 100svh;             /* fills full viewport height */
+  display: flex;
+  align-items: center;            /* vertical center */
+  justify-content: center;        /* horizontal center */
+  background: transparent;        /* keep consistent with your theme */
+  position: relative;
+  z-index: 1;
+  text-align: center;
 }
 
-.clickable { cursor: pointer; }
-
-/* Hover polish on the whole link area */
-.tile-link .island-tile,
-.tile-link .card.clickable {
-  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+/* Container alignment & width */
+.about-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding-inline: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
-.tile-link:hover .island-tile,
-.tile-link:hover .card.clickable {
+/* Title */
+.about-title {
+  font-size: clamp(3rem, 5vw, 4rem);
+  font-weight: 800;
+  color: var(--color-primary);
+  margin-bottom: 2rem;
+}
+
+/* Body text */
+.about-text {
+  font-size: 2rem;
+  line-height: 1.8;
+  color: var(--color-text, #2a2a2a);
+  margin-bottom: 3rem;
+  max-width: 60ch;
+}
+
+/* Learn More button */
+.about-btn {
+  display: inline-block;
+  padding: 0.9rem 2.2rem;
+  background-color: var(--color-primary);
+  color: #fff;
+  font-weight: 600;
+  border-radius: 35px;
+  text-decoration: none;
+  transition: background-color 0.25s ease, transform 0.25s ease;
+}
+
+.about-btn:hover {
+  background-color: #025989;  /* slightly darker blue */
   transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(0,0,0,.22);
-  /* If your cards have borders, this adds a subtle accent: */
-  border-color: var(--color-primary);
 }
 
-/* Keyboard focus ring for accessibility */
-.tile-link:focus-visible .island-tile,
-.tile-link:focus-visible .card.clickable {
-  outline: 3px solid var(--color-primary);
-  outline-offset: 2px;
-}
+/* Responsive behavior */
+@media (max-width: 768px) {
+  .about-title {
+    font-size: clamp(2rem, 6vw, 2.5rem);
+  }
 
-/* (Optional) If you want the island tile text/icon to stay your chosen colors on hover */
-.tile-link:hover .island-label { color: #b04851; }
+  .about-text {
+    font-size: 1rem;
+    padding-inline: 1rem;
+  }
+}
