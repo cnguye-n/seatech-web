@@ -1,5 +1,8 @@
-import React, { useState, useMemo, useEffect } from "react";
+// src/pages/SensorPage.tsx
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import "../styles/pages/sensors.css";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 type SensorStatus = "online" | "offline" | "warning";
 
@@ -51,6 +54,49 @@ const mockSensors: Sensor[] = [
   },
 ];
 
+// History + predicted tracks for each turtle.
+// NOTE: the LAST point in `history` is exactly the sensor's current lat/lng.
+type Track = {
+  history: [number, number][];
+  predicted: [number, number][];
+};
+
+const mockTracks: Record<string, Track> = {
+  "SENSOR-001": {
+    history: [
+      [13.20, -81.55],
+      [13.40, -81.35],
+      [13.5833, -81.2],
+    ],
+    predicted: [
+      [13.70, -81.05],
+      [13.82, -80.90],
+    ],
+  },
+  "SENSOR-002": {
+    history: [
+      [13.05, -81.70],
+      [13.22, -81.55],
+      [13.35, -81.37],
+    ],
+    predicted: [
+      [13.48, -81.18],
+      [13.60, -81.00],
+    ],
+  },
+  "SENSOR-003": {
+    history: [
+      [13.90, -80.80],
+      [14.10, -80.55],
+      [14.2833, -80.2833],
+    ],
+    predicted: [
+      [14.45, -80.00],
+      [14.55, -79.70],
+    ],
+  },
+};
+
 const SensorPage: React.FC = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | SensorStatus>("all");
@@ -87,6 +133,8 @@ const SensorPage: React.FC = () => {
   const warning = filteredSensors.filter((s) => s.status === "warning").length;
 
   const activeIndex = filteredSensors.findIndex((s) => s.id === activeId);
+  const activeSensor =
+    filteredSensors.find((s) => s.id === activeId) ?? null;
 
   const gridClassName = [
     "sensor-grid",
@@ -105,7 +153,7 @@ const SensorPage: React.FC = () => {
           <p className="heading1 mb-4">Sensors</p>
           <p className="bodytext">
             Centralized view of all deployed SEAtech sensors. Click a sensor
-            card to see its details.
+            card to see its details and visualize its recent path.
           </p>
         </div>
       </section>
@@ -198,14 +246,14 @@ const SensorPage: React.FC = () => {
         </div>
       </section>
 
-      {/* MOCK LIVE MAP SECTION */}
+      {/* LEAFLET PATH MAP SECTION */}
       <section className="section">
         <div className="container">
-          <MockLiveMap sensors={filteredSensors} />
+          <LeafletPathMap activeSensor={activeSensor} />
         </div>
       </section>
 
-      {/* CUSTOM SENSOR BUILD SECTION */}
+      {/* CUSTOM SENSOR BUILD SECTION (unchanged) */}
       <section className="section">
         <div className="container">
           <p className="heading2 mb-4">Our Custom Sensor Build</p>
@@ -323,67 +371,102 @@ const SensorCard: React.FC<SensorCardProps> = ({
   );
 };
 
-/* === MOCK LIVE MAP COMPONENT (zoomable mock, no external libs) === */
+/* === LEAFLET MAP SHOWING HISTORY + PREDICTION === */
 
-interface MockLiveMapProps {
-  sensors: Sensor[];
+interface LeafletPathMapProps {
+  activeSensor: Sensor | null;
 }
 
-const MockLiveMap: React.FC<MockLiveMapProps> = ({ sensors }) => {
+const LeafletPathMap: React.FC<LeafletPathMapProps> = ({ activeSensor }) => {
+  const mapDivRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const layerGroupRef = useRef<L.LayerGroup | null>(null);
   const [countdown, setCountdown] = useState(8);
-  const [zoom, setZoom] = useState(1.0);
 
+  // Mock "refresh" countdown
   useEffect(() => {
-    const interval = setInterval(() => {
+    const id = window.setInterval(() => {
       setCountdown((prev) => (prev <= 1 ? 8 : prev - 1));
     }, 1000);
-    return () => clearInterval(interval);
+    return () => window.clearInterval(id);
   }, []);
 
-  if (sensors.length === 0) {
-    return (
-      <div className="card map-card">
-        <div className="map-header-row">
-          <div>
-            <p className="heading3 mb-2">Deployment Map (Mock)</p>
-            <p className="bodytext map-subtitle">
-              No sensors match the current filters.
-            </p>
-          </div>
-          <div className="map-meta">
-            <span className="map-badge">Mock live</span>
-            <span className="map-timer">
-              Next mock refresh in {countdown}s
-            </span>
-          </div>
-        </div>
-        <div className="map-area" />
-      </div>
+  // Initialise Leaflet map once
+  useEffect(() => {
+    if (!mapDivRef.current || mapRef.current) return;
+
+    const map = L.map(mapDivRef.current, {
+      center: [13.8, -81.0],
+      zoom: 6,
+      zoomControl: false,
+    });
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors",
+    }).addTo(map);
+
+    L.control.zoom({ position: "topright" }).addTo(map);
+
+    mapRef.current = map;
+    layerGroupRef.current = L.layerGroup().addTo(map);
+  }, []);
+
+  // Update tracks whenever the active sensor changes
+  useEffect(() => {
+    const map = mapRef.current;
+    const layerGroup = layerGroupRef.current;
+    if (!map || !layerGroup) return;
+
+    layerGroup.clearLayers();
+
+    if (!activeSensor) {
+      // Nothing selected → leave base map only.
+      return;
+    }
+
+    const track = mockTracks[activeSensor.id];
+    if (!track) return;
+
+    const historyLatLngs = track.history.map(
+      ([lat, lng]) => L.latLng(lat, lng)
     );
-  }
+    const predictedLatLngs = track.predicted.map(
+      ([lat, lng]) => L.latLng(lat, lng)
+    );
 
-  // Simple lat/lng → [0,1] projection into our card, then padded visually.
-  const lats = sensors.map((s) => s.lat);
-  const lngs = sensors.map((s) => s.lng);
-  const minLat = Math.min(...lats);
-  const maxLat = Math.max(...lats);
-  const minLng = Math.min(...lngs);
-  const maxLng = Math.max(...lngs);
+    // History line
+    const historyLine = L.polyline(historyLatLngs, {
+      color: "#2ecc71",
+      weight: 3,
+    }).addTo(layerGroup);
 
-  const project = (lat: number, lng: number) => {
-    const x =
-      minLng === maxLng ? 0.5 : (lng - minLng) / (maxLng - minLng);
-    const y =
-      minLat === maxLat ? 0.5 : (lat - minLat) / (maxLat - minLat);
-    // flip Y so north-ish is up; add padding inside the blue area
-    return {
-      left: `${10 + x * 80}%`,
-      top: `${20 + (1 - y) * 65}%`,
-    };
-  };
+    // Predicted line (dashed)
+    const predictedLine = L.polyline(predictedLatLngs, {
+      color: "#f1c40f",
+      weight: 3,
+      dashArray: "8 6",
+    }).addTo(layerGroup);
 
-  const zoomIn = () => setZoom((z) => Math.min(2.0, z + 0.2));
-  const zoomOut = () => setZoom((z) => Math.max(0.7, z - 0.2));
+    // Latest position marker at END of history
+    const lastPoint = historyLatLngs[historyLatLngs.length - 1];
+    const marker = L.circleMarker(lastPoint, {
+      radius: 6,
+      color: "#2ecc71",
+      fillColor: "#2ecc71",
+      fillOpacity: 1,
+    }).addTo(layerGroup);
+
+    marker.bindPopup(
+      `<strong>${activeSensor.name}</strong><br/>${activeSensor.id}<br/>${lastPoint.lat.toFixed(
+        2
+      )}, ${lastPoint.lng.toFixed(2)}`
+    );
+
+    // Fit map to show both history + predicted
+    const allPoints = [...historyLatLngs, ...predictedLatLngs];
+    const bounds = L.latLngBounds(allPoints);
+    map.fitBounds(bounds, { padding: [40, 40] });
+  }, [activeSensor]);
 
   return (
     <div className="card map-card">
@@ -391,8 +474,9 @@ const MockLiveMap: React.FC<MockLiveMapProps> = ({ sensors }) => {
         <div>
           <p className="heading3 mb-2">Deployment Map (Mock)</p>
           <p className="bodytext map-subtitle">
-            Approximate TURTLE sensor locations in the Colombian Caribbean.
-            Positions and updates are illustrative only.
+            {activeSensor
+              ? `Path of ${activeSensor.name} based on last surfaced locations, plus a simple predicted heading.`
+              : "Click on a TURTLE sensor above to visualize its recent path and predicted heading."}
           </p>
         </div>
         <div className="map-meta">
@@ -403,84 +487,27 @@ const MockLiveMap: React.FC<MockLiveMapProps> = ({ sensors }) => {
         </div>
       </div>
 
-      <div className="map-area">
-        {/* subtle "islands" / landmasses */}
-        <div className="map-island island-roncador" />
-        <div className="map-island island-providencia" />
-        <div className="map-island island-serrana" />
-
-        {/* zoomable content wrapper */}
-        <div
-          className="map-inner-zoom"
-          style={{ transform: `scale(${zoom})` }}
-        >
-          {sensors.map((sensor) => {
-            const pos = project(sensor.lat, sensor.lng);
-            const statusClass =
-              sensor.status === "online"
-                ? "marker-online"
-                : sensor.status === "offline"
-                ? "marker-offline"
-                : "marker-warning";
-
-            return (
-              <div
-                key={sensor.id}
-                className={`map-marker ${statusClass}`}
-                style={pos}
-              >
-                <div className="map-marker-dot" />
-                <div className="map-marker-label">
-                  <span className="map-marker-name">{sensor.name}</span>
-                  <span className="map-marker-id">
-                    {sensor.id} • {sensor.lat.toFixed(2)},{" "}
-                    {sensor.lng.toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* zoom controls */}
-        <div className="map-zoom-controls">
-          <button
-            type="button"
-            className="map-zoom-btn"
-            onClick={zoomIn}
-          >
-            +
-          </button>
-          <button
-            type="button"
-            className="map-zoom-btn"
-            onClick={zoomOut}
-          >
-            −
-          </button>
-        </div>
-      </div>
+      <div className="map-leaflet-wrapper" ref={mapDivRef} />
 
       <div className="map-legend">
         <div className="map-legend-item">
           <span className="map-legend-dot online" />
-          <span className="bodytext">Online</span>
+          <span className="bodytext">Latest position</span>
+        </div>
+        <div className="map-legend-item">
+          <span className="map-legend-dot online" />
+          <span className="bodytext">History (solid)</span>
         </div>
         <div className="map-legend-item">
           <span className="map-legend-dot warning" />
-          <span className="bodytext">Warning</span>
-        </div>
-        <div className="map-legend-item">
-          <span className="map-legend-dot offline" />
-          <span className="bodytext">Offline</span>
+          <span className="bodytext">Predicted (dashed)</span>
         </div>
         <span className="map-legend-note bodytext">
-          Map layout and telemetry are mock data for demonstration.
+          Paths and predictions use mock data for demonstration.
         </span>
       </div>
     </div>
   );
 };
-
 
 export default SensorPage;
