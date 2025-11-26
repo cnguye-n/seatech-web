@@ -8,7 +8,7 @@ declare global {
 
 export default function Login() {
   const [user, setUser] = useState<any>(null);
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   // Initialize Google Sign-In
@@ -59,10 +59,30 @@ export default function Login() {
     setUser(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert(`Logging in as: ${username}`);
+    alert(`Logging in as: ${email}`);
+    const response = await fetch("http://127.0.0.1:5000/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ email: email, password: password }),
+    });
+    console.log("Login response:", response);
+    if (response.ok) {
+      const data = await response.json();
+      console.log("Login successful:", data);
+      setUser({ email: email, name: email.split("@")[0] });
+      localStorage.setItem("token", data.token);
+    } else {
+      console.error("Login failed");
+      alert("Login failed. Please check your credentials.");
+    }
   };
+
+  
+
 
   // Show logged-in user info or login UI
   return (
@@ -78,9 +98,9 @@ export default function Login() {
         <div>
           <input
             type="text"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             style={styles.input}
           />
           </div>
