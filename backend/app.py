@@ -17,7 +17,7 @@ CORS(app)
 # Config
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev")
 
-# can use .env later, but for now hardcode the working DB url
+# can use .env later, but for now hardcoding the working DB url
 # so it matches what was created in psql:
 #   user: turtle_user
 #   pass: turtle_pass
@@ -75,9 +75,7 @@ def root():
 
 print("Registered routes:", app.url_map)
 
-
-
-# Debug route: get some pings
+# debug route: get some pings
 @app.route("/api/pings", methods=["GET"])
 def get_pings():
     query = text("""
@@ -104,8 +102,8 @@ def get_pings():
 @app.route("/api/turtles/<int:turtle_id>/path", methods=["GET"])
 def get_turtle_path(turtle_id: int):
     """
-    Returns ordered pings for a given turtle as a list of points.
-    This is what your map can use to draw a polyline.
+    returns ordered pings for a given turtle as a list of points.
+    this is what the map can use to draw a polyline.
     """
     query = text("""
         SELECT p.latitude, p.longitude, p.ping_time
