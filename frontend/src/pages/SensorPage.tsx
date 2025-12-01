@@ -4,6 +4,8 @@ import "../styles/pages/sensors.css";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
+const API_BASE = "http://localhost:5000"; // backend base URL
+
 type SensorStatus = "online" | "offline" | "warning";
 
 interface Sensor {
@@ -18,6 +20,14 @@ interface Sensor {
   lng: number;
 }
 
+// History + predicted tracks for each turtle.
+// We'll fill this from the backend instead of using hard-coded mockTracks.
+type Track = {
+  history: [number, number][];
+  predicted: [number, number][];
+};
+
+// Initial mock sensors so the page doesn’t look empty if backend is down
 const mockSensors: Sensor[] = [
   {
     id: "SENSOR-001",
@@ -54,64 +64,60 @@ const mockSensors: Sensor[] = [
   },
 ];
 
-// History + predicted tracks for each turtle.
-// NOTE: the LAST point in `history` is exactly the sensor's current lat/lng.
-type Track = {
-  history: [number, number][];
-  predicted: [number, number][];
-};
-
-const mockTracks: Record<string, Track> = {
-  "SENSOR-001": {
-    history: [
-      [13.20, -81.55],
-      [13.40, -81.35],
-      [13.5833, -81.2],
-    ],
-    predicted: [
-      [13.70, -81.05],
-      [13.82, -80.90],
-    ],
-  },
-  "SENSOR-002": {
-    history: [
-      [13.05, -81.70],
-      [13.22, -81.55],
-      [13.35, -81.37],
-    ],
-    predicted: [
-      [13.48, -81.18],
-      [13.60, -81.00],
-    ],
-  },
-  "SENSOR-003": {
-    history: [
-      [13.90, -80.80],
-      [14.10, -80.55],
-      [14.2833, -80.2833],
-    ],
-    predicted: [
-      [14.45, -80.00],
-      [14.55, -79.70],
-    ],
-  },
-};
-
 const SensorPage: React.FC = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | SensorStatus>("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [activeId, setActiveId] = useState<string | null>(null);
 
+  // NEW: sensors state (starts with mock, then replaced by backend data)
+  const [sensors, setSensors] = useState<Sensor[]>(mockSensors);
+
+  // NEW: track for the currently active sensor (history from backend)
+  const [activeTrack, setActiveTrack] = useState<Track | null>(null);
+
+  // --- FETCH TURTLES FROM BACKEND ON MOUNT ---
+  useEffect(() => {
+    const fetchTurtles = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/turtles`);
+        if (!res.ok) {
+          console.error("Failed to fetch turtles", res.statusText);
+          return;
+        }
+        const data = await res.json(); // [{ id, name, species, tag_id }, ...]
+
+        const mapped: Sensor[] = data.map((t: any) => ({
+          id: String(t.id), // numeric DB id as string
+          name: t.name ?? `Turtle ${t.id}`,
+          type: t.species ?? "Turtle tracker",
+          location: "Unknown location", // can be updated when you store this in DB
+          status: "online", // placeholder for now
+          lastReading: "-",
+          lastUpdated: "N/A",
+          lat: 0,
+          lng: 0,
+        }));
+
+        setSensors(mapped);
+      } catch (err) {
+        console.error("Error fetching turtles", err);
+      }
+    };
+
+    fetchTurtles();
+  }, []);
+
+  // --- SENSOR TYPES / FILTERS USE REAL SENSORS NOW ---
   const sensorTypes = useMemo(
-    () => ["all", ...Array.from(new Set(mockSensors.map((s) => s.type)))],
-    []
+    () => ["all", ...Array.from(new Set(sensors.map((s) => s.type)))],
+    [sensors]
   );
 
   const filteredSensors = useMemo(() => {
     const term = search.toLowerCase();
 
-    return mockSensors.filter((sensor) => {
+    return sensors.filter((sensor) => {
       const matchesSearch =
         sensor.name.toLowerCase().includes(term) ||
         sensor.id.toLowerCase().includes(term) ||
@@ -125,7 +131,7 @@ const SensorPage: React.FC = () => {
 
       return matchesSearch && matchesStatus && matchesType;
     });
-  }, [search, statusFilter, typeFilter]);
+  }, [sensors, search, statusFilter, typeFilter]);
 
   const total = filteredSensors.length;
   const online = filteredSensors.filter((s) => s.status === "online").length;
@@ -144,6 +150,41 @@ const SensorPage: React.FC = () => {
   ]
     .filter(Boolean)
     .join(" ");
+
+  // --- FETCH TRACK FROM BACKEND WHEN ACTIVE SENSOR CHANGES ---
+  useEffect(() => {
+    const fetchTrack = async () => {
+      if (!activeSensor) {
+        setActiveTrack(null);
+        return;
+      }
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/turtles/${activeSensor.id}/path`
+        );
+        if (!res.ok) {
+          console.error("Failed to fetch turtle path", res.statusText);
+          setActiveTrack(null);
+          return;
+        }
+        const data: { latitude: number; longitude: number; ping_time: string }[] =
+          await res.json();
+
+        const history: [number, number][] = data.map((p) => [
+          p.latitude,
+          p.longitude,
+        ]);
+
+        // No real prediction yet → keep predicted empty for now
+        setActiveTrack({ history, predicted: [] });
+      } catch (err) {
+        console.error("Error fetching turtle path", err);
+        setActiveTrack(null);
+      }
+    };
+
+    fetchTrack();
+  }, [activeSensor]);
 
   return (
     <>
@@ -249,7 +290,7 @@ const SensorPage: React.FC = () => {
       {/* LEAFLET PATH MAP SECTION */}
       <section className="section">
         <div className="container">
-          <LeafletPathMap activeSensor={activeSensor} />
+          <LeafletPathMap activeSensor={activeSensor} activeTrack={activeTrack} />
         </div>
       </section>
 
@@ -375,9 +416,13 @@ const SensorCard: React.FC<SensorCardProps> = ({
 
 interface LeafletPathMapProps {
   activeSensor: Sensor | null;
+  activeTrack: Track | null;
 }
 
-const LeafletPathMap: React.FC<LeafletPathMapProps> = ({ activeSensor }) => {
+const LeafletPathMap: React.FC<LeafletPathMapProps> = ({
+  activeSensor,
+  activeTrack,
+}) => {
   const mapDivRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
@@ -411,7 +456,7 @@ const LeafletPathMap: React.FC<LeafletPathMapProps> = ({ activeSensor }) => {
     layerGroupRef.current = L.layerGroup().addTo(map);
   }, []);
 
-  // Update tracks whenever the active sensor changes
+  // Update tracks whenever the active sensor or track changes
   useEffect(() => {
     const map = mapRef.current;
     const layerGroup = layerGroupRef.current;
@@ -419,19 +464,16 @@ const LeafletPathMap: React.FC<LeafletPathMapProps> = ({ activeSensor }) => {
 
     layerGroup.clearLayers();
 
-    if (!activeSensor) {
-      // Nothing selected → leave base map only.
+    if (!activeSensor || !activeTrack || activeTrack.history.length === 0) {
+      // Nothing selected or no data
       return;
     }
 
-    const track = mockTracks[activeSensor.id];
-    if (!track) return;
-
-    const historyLatLngs = track.history.map(
-      ([lat, lng]) => L.latLng(lat, lng)
+    const historyLatLngs = activeTrack.history.map(([lat, lng]) =>
+      L.latLng(lat, lng)
     );
-    const predictedLatLngs = track.predicted.map(
-      ([lat, lng]) => L.latLng(lat, lng)
+    const predictedLatLngs = activeTrack.predicted.map(([lat, lng]) =>
+      L.latLng(lat, lng)
     );
 
     // History line
@@ -440,12 +482,14 @@ const LeafletPathMap: React.FC<LeafletPathMapProps> = ({ activeSensor }) => {
       weight: 3,
     }).addTo(layerGroup);
 
-    // Predicted line (dashed)
-    const predictedLine = L.polyline(predictedLatLngs, {
-      color: "#f1c40f",
-      weight: 3,
-      dashArray: "8 6",
-    }).addTo(layerGroup);
+    // Predicted line (dashed) - only if we have predicted points
+    if (predictedLatLngs.length > 0) {
+      L.polyline(predictedLatLngs, {
+        color: "#f1c40f",
+        weight: 3,
+        dashArray: "8 6",
+      }).addTo(layerGroup);
+    }
 
     // Latest position marker at END of history
     const lastPoint = historyLatLngs[historyLatLngs.length - 1];
@@ -462,21 +506,25 @@ const LeafletPathMap: React.FC<LeafletPathMapProps> = ({ activeSensor }) => {
       )}, ${lastPoint.lng.toFixed(2)}`
     );
 
-    // Fit map to show both history + predicted
-    const allPoints = [...historyLatLngs, ...predictedLatLngs];
+    // Fit map to show all points
+    const allPoints =
+      predictedLatLngs.length > 0
+        ? [...historyLatLngs, ...predictedLatLngs]
+        : historyLatLngs;
+
     const bounds = L.latLngBounds(allPoints);
     map.fitBounds(bounds, { padding: [40, 40] });
-  }, [activeSensor]);
+  }, [activeSensor, activeTrack]);
 
   return (
     <div className="card map-card">
       <div className="map-header-row">
         <div>
-          <p className="heading3 mb-2">Deployment Map (Mock)</p>
+          <p className="heading3 mb-2">Deployment Map</p>
           <p className="bodytext map-subtitle">
             {activeSensor
-              ? `Path of ${activeSensor.name} based on last surfaced locations, plus a simple predicted heading.`
-              : "Click on a TURTLE sensor above to visualize its recent path and predicted heading."}
+              ? `Path of ${activeSensor.name} based on tracked locations from the backend.`
+              : "Click on a TURTLE sensor above to visualize its recent path."}
           </p>
         </div>
         <div className="map-meta">
@@ -503,7 +551,7 @@ const LeafletPathMap: React.FC<LeafletPathMapProps> = ({ activeSensor }) => {
           <span className="bodytext">Predicted (dashed)</span>
         </div>
         <span className="map-legend-note bodytext">
-          Paths and predictions use mock data for demonstration.
+          Paths and predictions use backend + mock logic for demonstration.
         </span>
       </div>
     </div>

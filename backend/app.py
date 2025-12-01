@@ -75,6 +75,8 @@ def root():
 
 print("Registered routes:", app.url_map)
 
+
+
 # Debug route: get some pings
 @app.route("/api/pings", methods=["GET"])
 def get_pings():
@@ -127,27 +129,27 @@ def get_turtle_path(turtle_id: int):
 
     return jsonify(rows), 200
 
-# optional for list of turtles
+# list turtles
 @app.route("/api/turtles", methods=["GET"])
 def list_turtles():
-    query = text("""
-        SELECT id, name, species, tag_id
-        FROM turtles
-        ORDER BY id;
-    """)
-    with db.engine.connect() as conn:
-        result = conn.execute(query)
-        turtles = [
-            {
-                "id": r.id,
-                "name": r.name,
-                "species": r.species,
-                "tag_id": r.tag_id,
-            }
-            for r in result
-        ]
-    return jsonify(turtles), 200
-
+  query = text("""
+      SELECT id, name, species, tag_id
+      FROM turtles
+      ORDER BY id;
+  """)
+  with db.engine.connect() as conn:
+    result = conn.execute(query)
+    turtles = [
+      {
+        "id": r.id,
+        "name": r.name,
+        "species": r.species,
+        "tag_id": r.tag_id,
+      }
+      for r in result
+    ]
+  return jsonify(turtles), 200
 
 if __name__ == "__main__":
+    print("Registered routes:", app.url_map)
     app.run(debug=True, port=5000)
