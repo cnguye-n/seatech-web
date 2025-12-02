@@ -63,7 +63,6 @@ const islands: Island[] = [
 export default function IslandsPage() {
   const location = useLocation();
 
-  // Scroll to the hash target on mount / hash change
   useEffect(() => {
     const go = () => {
       const hash = location.hash;
@@ -85,15 +84,14 @@ export default function IslandsPage() {
         <p className="heading1">Research Islands</p>
         <p className="bodytext">Tracking sea turtles across Colombia’s remote Caribbean islands.</p>
 
-        {/* Overview map at the top */}
         <MapComponent />
 
-        {/* One IslandCard per island (inside the container) */}
+        {/* 1 island card per island (inside container) */}
         {islands.map((it, idx) => (
            <Reveal
             key={it.id}
-            effect="scale-in"    // 👈 pops in as it appears
-            delay={idx * 100}    // staggered by index
+            effect="scale-in"
+            delay={idx * 100}
             >
           <div key={it.id}>
             {idx === 0 && <div className="islands-top-spacer" aria-hidden />}
