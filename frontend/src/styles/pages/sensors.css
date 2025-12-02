@@ -1,9 +1,8 @@
-/* Smooth page scrolling */
 html {
   scroll-behavior: smooth;
 }
 
-/* ===== Sensor cards grid ===== */
+/*===== sensors =====*/
 
 .sensor-grid {
   display: grid;
@@ -11,7 +10,6 @@ html {
   grid-template-columns: repeat(3, minmax(240px, 1fr));
 }
 
-/* Responsive fallbacks */
 @media (max-width: 1024px) {
   .sensor-grid {
     grid-template-columns: repeat(2, minmax(220px, 1fr));
@@ -23,13 +21,16 @@ html {
   }
 }
 
-/* Base sensor card */
+/* base sensor */
 .sensor-card {
   cursor: pointer;
   padding: var(--space-6);
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
+  background: linear-gradient(135deg, rgba(131, 197, 190, 0.1) 0%, rgba(0, 109, 119, 0.1) 100%);
+  border: 2px solid #83c5be;
+  border-radius: 12px;
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease,
@@ -37,24 +38,19 @@ html {
     background-color 0.2s ease;
 }
 
-/* Hover effect */
 .sensor-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
-  border-color: var(--color-primary);
-  background:
-    radial-gradient(circle at top left,
-      rgba(48, 93, 116, 0.67),  /* uses --color-primary */
-      transparent 55%)
-    var(--color-darkgrey);
+  box-shadow: 0 12px 24px rgba(0, 109, 119, 0.3);
+  border-color: #006d77;
+  background: linear-gradient(135deg, rgba(131, 197, 190, 0.15) 0%, rgba(0, 109, 119, 0.15) 100%);
 }
 
-/* Active border accent */
+/* active border accent */
 .sensor-card.is-open {
-  border-color: var(--color-primary);
+  border-color: #006d77;
+  background: linear-gradient(135deg, rgba(131, 197, 190, 0.2) 0%, rgba(0, 109, 119, 0.2) 100%);
 }
 
-/* Header: name + ID stacked */
 .sensor-card-header {
   margin-bottom: var(--space-3);
 }
@@ -62,7 +58,7 @@ html {
   margin: 0;
   font-size: 1rem;
   font-weight: var(--fontweight-bold);
-  color: var(--color-text);
+  color: #006d77;
 }
 .sensor-id {
   margin: 0;
@@ -70,7 +66,6 @@ html {
   color: var(--color-text-dim);
 }
 
-/* Expand/collapse wrapper */
 .sensor-card-body-wrapper {
   overflow: hidden;
   max-height: 0;
@@ -82,19 +77,21 @@ html {
     transform 0.4s ease;
 }
 
-/* Open state */
+/* open state */
 .sensor-card-body-wrapper.open {
   max-height: 260px;
   opacity: 1;
   transform: translateY(0);
 }
 
-/* Inner body layout */
+/* inner body  */
 .sensor-card-body {
   margin-top: var(--space-2);
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  padding-top: 1rem;
+  border-top: 2px solid rgba(131, 197, 190, 0.5);
 }
 
 .sensors-subtext {
@@ -108,7 +105,7 @@ html {
   text-align: center;
 }
 
-/* Status badge */
+/* status badge */
 .status-pill {
   display: inline-flex;
   align-items: center;
@@ -132,7 +129,7 @@ html {
   color: #f1c40f;
 }
 
-/* Filters */
+/* filters */
 .filters-row {
   display: flex;
   align-items: center;
@@ -148,19 +145,21 @@ html {
 }
 .filters-field {
   min-width: 160px;
-  padding: 0.5rem 0.75rem;
-  border-radius: var(--radius);
-  border: 1px solid var(--color-border);
-  background: var(--color-darkgrey);
-  color: var(--color-text);
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  border: 2px solid #83c5be;
+  background: white;
+  color: #333;
   outline: none;
-  transition: border-color 0.2s ease;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
 }
 .filters-field:focus {
-  border-color: var(--color-primary);
+  border-color: #006d77;
+  box-shadow: 0 0 0 3px rgba(131, 197, 190, 0.2);
 }
 
-/* Summary cards grid */
+/* summary grid */
 .summary-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -171,8 +170,6 @@ html {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-
-/* ===== Active layout patterns for 3-card grid ===== */
 
 .sensor-grid.active-index-0 {
   grid-template-columns: 2fr 1fr;
@@ -225,7 +222,6 @@ html {
   grid-row: 2 / 3;
 }
 
-/* Mobile / tablet: normalize layout */
 @media (max-width: 1024px) {
   .sensor-grid,
   .sensor-grid.active-index-0,
@@ -240,7 +236,7 @@ html {
   }
 }
 
-/* ===== Custom Sensor Build section ===== */
+/*===== custom sensor build =====*/
 
 .sensor-build-grid {
   display: grid;
@@ -293,9 +289,7 @@ html {
   gap: 0.25rem;
 }
 
-/* =========================================================
-   LEAFLET MOCK LIVE MAP
-   ========================================================= */
+/*===== mock map ====*/
 
 .map-card {
   margin-top: var(--space-4);
@@ -340,7 +334,7 @@ html {
   font-size: 0.75rem;
 }
 
-/* Map container */
+/* map container */
 .map-leaflet-wrapper {
   position: relative;
   width: 100%;
@@ -354,7 +348,7 @@ html {
   height: 100%;
 }
 
-/* Zoom controls */
+/* zoom controls */
 .map-zoom-controls {
   position: absolute;
   right: 1.25rem;
@@ -384,7 +378,7 @@ html {
   border-color: var(--color-primary);
 }
 
-/* Empty state overlay */
+/* empty state */
 .map-empty-message {
   position: absolute;
   inset: 0;
@@ -411,8 +405,6 @@ html {
   color: #d0d0d0;
   margin: 0;
 }
-
-/* Pulsing marker icon */
 
 .sensor-marker {
   position: relative;
@@ -475,7 +467,7 @@ html {
   }
 }
 
-/* Legend */
+/*==== legend ====*/
 
 .map-legend {
   display: flex;
@@ -528,7 +520,6 @@ html {
   font-size: 0.75rem;
 }
 
-/* Responsive tweaks */
 @media (max-width: 768px) {
   .map-header-row {
     flex-direction: column;

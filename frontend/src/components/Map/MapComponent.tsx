@@ -1,4 +1,3 @@
-// MapComponent.tsx
 import { useEffect, useState } from "react";
 import {
   MapContainer,
@@ -16,7 +15,6 @@ import "./MapComponent.css";
 
 const { BaseLayer, Overlay } = LayersControl;
 
-// Fix default Leaflet icon paths in bundlers (React/Vite)
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -47,7 +45,6 @@ const DEFAULT_POINTS: Point[] = [
   { name: "Serranilla Bank", coords: [15.850, -79.850] },
 ];
 
-// Watches zoom so we can fade labels in/out at a threshold
 function ZoomWatcher({ onChange }: { onChange: (z: number) => void }) {
   useMapEvents({
     zoomend(e) {
@@ -57,7 +54,7 @@ function ZoomWatcher({ onChange }: { onChange: (z: number) => void }) {
   return null;
 }
 
-// Auto-fit/center to the given points (runs on mount + when points change)
+// auto-fit/center to the given points
 function FitToPoints({
   points,
   padding = 80,
@@ -76,7 +73,7 @@ function FitToPoints({
   return null;
 }
 
-// recenter button control. this recenters the map to fit all the points of the markers
+// recenter button control (recenters map to fit all points of markers)
 function RecenterControl({ points }: { points: Point[] }) {
   const map = useMap();
 
@@ -87,7 +84,8 @@ function RecenterControl({ points }: { points: Point[] }) {
       const link = L.DomUtil.create("a", "", container);
       link.href = "#";
       link.title = "Recenter";
-      link.innerHTML = "⟳"; // you can swap for an SVG icon
+      link.innerHTML = "⟳";
+
       // prevent map drag on click
       L.DomEvent.disableClickPropagation(link);
       L.DomEvent.on(link, "click", (e: any) => {
@@ -108,7 +106,7 @@ export default function MapComponent({
   points = DEFAULT_POINTS,
   initialCenter = [13.4, -81.1] as [number, number],
   initialZoom = 6.7,
-  labelZoom = 6.7, // labels visible at/above this zoom
+  labelZoom = 6.7,
   autoFit = true,
   defaultLayers,
 }: {
@@ -121,7 +119,7 @@ export default function MapComponent({
 }) {
   const [zoom, setZoom] = useState(initialZoom);
 
- // Default behavior: OSM + Ocean Reference Labels
+ // OSM + Ocean Reference Labels
   const cfg: Required<DefaultLayers> = {
     base: defaultLayers?.base ?? "osm",
     overlays: {
@@ -172,7 +170,7 @@ export default function MapComponent({
     />
   </BaseLayer>
 
-  {/* Overlays */}
+  {/* overlays */}
   <Overlay checked={!!cfg.overlays.oceanLabels} name="Ocean Reference Labels">
     <TileLayer
       attribution="Labels © Esri — Ocean Reference"
@@ -193,7 +191,7 @@ export default function MapComponent({
 </LayersControl>
 
 
-      {/* Markers + labels */}
+      {/* markers, labels */}
       {points.map((p) => (
         <Marker key={p.name} position={p.coords}>
           <Tooltip

@@ -1,90 +1,161 @@
+/* MapComponent.css */
+
 .map-wrapper {
   width: 100%;
   height: 60vh;
+  min-height: 500px;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: var(--shadow);
+  box-shadow: 0 4px 12px rgba(0, 109, 119, 0.2);
+  border: 2px solid #83c5be;
 }
 
-/* Responsive adjustment for phones */
 @media (max-width: 768px) {
   .map-wrapper {
     height: 40vh;
+    min-height: 400px;
   }
 }
 
 .leaflet-map {
   width: 100%;
   height: 100%;
-}
-
-
-.leaflet-map {
-  height: 600px; /* or any size you like */
-  width: 100%;
+  min-height: 500px;
   border-radius: 12px;
+  background: linear-gradient(135deg, rgba(131, 197, 190, 0.15) 0%, rgba(0, 109, 119, 0.15) 100%);
 }
 
-/* Label styling for each island */
-.island-label {
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
-  padding: 2px 6px;
-  border: none;
-  border-radius: 4px;
-  font-weight: 600;
-  font-size: 0.85rem;
-  white-space: nowrap;
-  box-shadow: none;
-}
-
-.leaflet-map {
-  height: 600px;
+.leaflet-map .leaflet-container {
   width: 100%;
-  border-radius: 12px;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(131, 197, 190, 0.1) 0%, rgba(0, 109, 119, 0.1) 100%);
 }
 
-/* MapComponent.css */
+/* label styling islands */
 .island-label {
   opacity: 0;
   transition: opacity 200ms ease-in-out;
-  background: rgba(0,0,0,0.55);
+  background: rgba(0, 109, 119, 0.85);
   color: #fff;
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 4px 8px;
+  border: 1px solid #83c5be;
+  border-radius: 6px;
   font-weight: 600;
+  font-size: 0.85rem;
   white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
+.island-label.visible { 
+  opacity: 1; 
+}
 
-/* Matches Leaflet zoom button size */
+.leaflet-zoom-anim .island-label { 
+  transform: translateZ(0); 
+}
+
+.leaflet-control-recenter {
+  margin-top: 10px;
+}
+
 .leaflet-control-recenter a {
-  width: 30px;               /* same as zoom button */
-  height: 30px;
-  line-height: 30px;
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
   text-align: center;
   font-weight: 700;
   font-family: system-ui, sans-serif;
-  background: #fff;
-  color: #000;
-  border-radius: 4px;
-  font-size: 18px;           /* increase icon size */
+  background: white;
+  color: #006d77;
+  border: 2px solid #83c5be;
+  border-radius: 8px;
+  font-size: 18px;
   display: block;
+  transition: all 0.3s ease;
 }
 
 .leaflet-control-recenter a:hover {
-  background: #f4f4f4;
+  background: #006d77;
+  color: white;
+  border-color: #006d77;
+  transform: scale(1.05);
 }
 
-/* Optional: small spacing tweak below zoom buttons */
-.leaflet-top .leaflet-control-recenter {
-  margin-top: 2px;           /* space between zoom and recenter */
+.leaflet-control-layers {
+  border: 2px solid #83c5be;
+  border-radius: 8px;
+  background: white;
 }
 
+.leaflet-control-layers-toggle {
+  background-color: white;
+  border: 2px solid #83c5be;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+}
 
+.leaflet-control-layers-toggle:hover {
+  background-color: rgba(131, 197, 190, 0.1);
+}
 
-.island-label.visible { opacity: 1; }
+.leaflet-control-zoom a {
+  background: white;
+  color: #006d77;
+  border: 2px solid #83c5be;
+  width: 32px;
+  height: 32px;
+  line-height: 28px;
+  font-size: 18px;
+  font-weight: bold;
+}
 
+.leaflet-control-zoom a:hover {
+  background: #006d77;
+  color: white;
+  border-color: #006d77;
+}
 
-/* Optional: shrink label text slightly at medium zooms */
-.leaflet-zoom-anim .island-label { transform: translateZ(0); } /* keep crisp during zoom */
+.leaflet-control-zoom-in {
+  border-radius: 8px 8px 0 0;
+}
+
+.leaflet-control-zoom-out {
+  border-radius: 0 0 8px 8px;
+  border-top: none;
+}
+
+.leaflet-popup-content-wrapper {
+  background: white;
+  border: 2px solid #83c5be;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 109, 119, 0.2);
+}
+
+.leaflet-popup-content {
+  margin: 12px;
+  color: #333;
+}
+
+.leaflet-popup-content strong {
+  color: #006d77;
+  font-size: 1.1rem;
+}
+
+.leaflet-popup-tip {
+  background: white;
+  border: 2px solid #83c5be;
+  border-top: none;
+  border-right: none;
+}
+
+.leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 0.75rem;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.leaflet-control-attribution a {
+  color: #006d77;
+}

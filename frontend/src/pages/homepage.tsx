@@ -49,13 +49,13 @@ export default function Homepage() {
 
           if (entry.isIntersecting) {
             // entering viewport:
-            // scrolling down  → fade up   (start from +12px)
-            // scrolling up    → fade down (start from -12px)
+            // scrolling down -> fade up (+12px)
+            // scrolling up -> fade down (-12px)
             el.style.setProperty("--from", dir === "down" ? "12px" : "-12px");
             el.classList.add("in-view");
           } else {
             // leaving viewport:
-            // set opposite so it fades out in the scroll direction
+            // opposite -> fades out in the scroll direction
             el.style.setProperty("--from", dir === "down" ? "-12px" : "12px");
             el.classList.remove("in-view");
           }
@@ -72,17 +72,17 @@ export default function Homepage() {
 
   return (
     <div className="homepage">
-      {/* ===== 1) HERO ===== */}
+      {/* ===== hero ===== */}
       <section className="section hero-gallery">
         <div className="hero-gallery-wrapper">
           <FullBleedGallery
             images={galleryImages}
-            aspectRatio="3/2"      // adjust to make it taller/shorter
+            aspectRatio="3/2"
             autoPlay={true}
             autoPlayMs={5000}
           />
 
-          {/* Overlay text */}
+          {/* overlay text */}
           <div className="hero-gallery-text">
             <p className="heading1">SEAtech</p>
             <p className="bodytext">Technology powering marine conservation</p>
@@ -94,7 +94,7 @@ export default function Homepage() {
         <div className="container">
           <div className="info-stack">
 
-            {/* Turtle row — icon LEFT, text RIGHT */}
+            {/* turtles */}
             <Link to="/turtles" className="cta-row turtle">
               <div className="cta-icon turtle-icon" aria-hidden="true" />
               <div className="cta-text">
@@ -105,7 +105,7 @@ export default function Homepage() {
               </div>
             </Link>
 
-            {/* Sensor row — text LEFT, icon RIGHT */}
+            {/* sensors */}
             <Link to="/sensor" className="cta-row sensor">
               <div className="cta-text">
                 <p className="cta-title">Sensor</p>
@@ -122,7 +122,7 @@ export default function Homepage() {
       </section>
 
 
-      {/* ===== 3) Islands section ===== */}
+      {/* ===== islands ===== */}
       <section className="section islands parallax-block">
         <div className="parallax-media" aria-hidden />
         <div className="container parallax-content">
@@ -130,7 +130,7 @@ export default function Homepage() {
             <Reveal effect="fade-in">
               <div className="islands-header">
                 <p className="heading2">Research Islands</p>
-                <p className="bodytext dim">Six sites used as collection/observation areas.</p>
+                <p className="bodytext dim">6 sites used as Collection/Observation Areas</p>
               </div>
             </Reveal>
           </div>
@@ -147,7 +147,7 @@ export default function Homepage() {
         </div>
       </section>
 
-      {/* ===== 4) About Us Section ===== */}
+      {/* ===== about us ===== */}
       <section className="vh-spacer about-band">
         <div className="container about-container">
           <h2 className="about-title">About Us</h2>
@@ -163,7 +163,6 @@ export default function Homepage() {
           </Link>
         </div>
       </section>
-
 
     </div>
   );

@@ -1,20 +1,38 @@
 /* wrapper */
 .islandcard {
-  background: #def6ee;
-  border-radius: 16px;
+  background: linear-gradient(135deg, #E0F2F1 0%, #FFFFFF 100%);
+  border-radius: 1.5rem;
   padding: clamp(16px, 3vw, 28px);
   margin-block: var(--space-8);
+  box-shadow: 0 4px 20px rgba(8, 145, 178, 0.12);
+  border: none;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* card hover effect */
+.islandcard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 35px rgba(8, 145, 178, 0.25);
 }
 
 /* header */
 .islandcard__header {
   text-align: center;
 }
+
 .islandcard__title {
   margin: 0 0 var(--space-3);
+  color: #0891B2;
+  font-weight: 700;
+  transition: color 0.3s ease;
 }
 
-/* OMBRE/GRADIENT RULE (darker center, lighter ends) */
+/* color on hover */
+.islandcard:hover .islandcard__title {
+  color: #0891B2;
+}
+
+/* ombre rule */
 .islandcard__rule {
   display: block;
   height: 3px;
@@ -23,88 +41,151 @@
   border-radius: 999px;
   background: radial-gradient(
     ellipse at center,
-    rgba(255, 120, 180, 1) 0%,     /* darker center pink */
-    rgba(255, 160, 200, 0.9) 45%,  /* mid pink */
-    rgba(255, 255, 255, 0.25) 100% /* fade to light */
+    #0891B2 0%,
+    #80DEEA 25%,
+    rgba(255, 160, 200, 0.9) 60%,
+    rgba(255, 120, 180, 0.5) 100%
   );
   opacity: 0.95;
 }
 
-/* subtitle text under the rule */
+/* subtitle text */
 .islandcard__subtitle {
   text-align: center;
   font-style: italic;
   margin: 0 0 var(--space-6);
-  color: var(--color-text);
+  color: #1A4D5C; 
+  font-weight: 500;
 }
 
-/* body layout: big free area left + infobox right */
+/* body layout */
 .islandcard__body {
   display: grid;
   grid-template-columns: 1.2fr 0.9fr;
   gap: var(--space-8);
   align-items: start;
-  border-radius: 16px;
+  border-radius: 1rem;
   padding: var(--space-6);
-
-  /* ✨ Solid Dew Kiss gradient background */
   background: linear-gradient(
     135deg,
-    #EEC4CE 0%,   /* Orchid Pink */
-    #D8BEAB 100%  /* Dark Vanilla */
+    #FFD9EC 0%,
+    #FFE0F0 50%,
+    #FFFFFF 100%
   );
-
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  color: #fff; /* optional for readability */
+  box-shadow: 0 4px 15px rgba(255, 160, 200, 0.15);
+  border: 2px solid rgba(255, 160, 200, 0.3);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
+/* shimmer hover */
+.islandcard__body::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(8, 145, 178, 0.15), transparent);
+  transition: left 0.6s ease;
+  pointer-events: none;
+}
+
+.islandcard__body:hover::before {
+  left: 100%;
+}
+
+.islandcard__body:hover {
+  box-shadow: 0 6px 25px rgba(8, 145, 178, 0.2);
+  border-color: rgba(128, 222, 234, 0.6);
+}
 
 .islandcard__left {
-  min-height: 220px; /* just to suggest space; remove if not needed */
+  min-height: 220px;
+  color: #8B4C6B;
 }
 
-/* Transparent grey for the right info box (map + facts) */
 .islandcard__box {
-  background: rgba(30, 30, 30, 0.45); /* transparent dark grey */
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  backdrop-filter: blur(8px);         /* frosted effect */
-  color: white;
+  background: #FFFFFF;  border: 2px solid rgba(255, 160, 200, 0.2); 
+  border-radius: 1rem;
+  backdrop-filter: blur(8px);
+  padding: 1.5rem;
+  box-shadow: 0 4px 15px rgba(255, 160, 200, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.islandcard__box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(8, 145, 178, 0.25); 
+  border-color: rgba(128, 222, 234, 0.5); 
 }
 
 .islandcard__mapwrap {
-  aspect-ratio: 1 / 1;         /* square */
-  border-radius: 14px;
+  aspect-ratio: 1 / 1;
+  border-radius: 1rem;
   overflow: hidden;
-  box-shadow: var(--shadow);
+  box-shadow: 0 4px 15px rgba(255, 160, 200, 0.2); 
   margin-bottom: var(--space-4);
+  border: 2px solid rgba(255, 160, 200, 0.15); 
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
+
+.islandcard__mapwrap:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 25px rgba(8, 145, 178, 0.3);
+  border-color: rgba(128, 222, 234, 0.6);
+}
+
 .islandcard__map {
   width: 100%;
   height: 100%;
 }
 
+/* embedded MapComponent fill wrapper */
+.islandcard__mapwrap .leaflet-map { 
+  width: 100%; 
+  height: 100%; 
+}
 
-/* Force the embedded MapComponent to fill the wrapper */
-.islandcard__mapwrap .leaflet-map { width: 100%; height: 100%; }
-
-/* facts like Wikipedia infobox */
 .islandcard__facts {
   margin: 0;
   display: grid;
   gap: 10px;
 }
+
 .fact {
   display: grid;
   grid-template-columns: 160px 1fr;
   gap: 12px;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255, 160, 200, 0.1);
+  transition: border-color 0.2s ease, background 0.2s ease;
 }
+
+.fact:hover {
+  border-color: rgba(128, 222, 234, 0.4); 
+  background: linear-gradient(90deg, transparent, rgba(8, 145, 178, 0.05), transparent); 
+}
+
+.fact:last-child {
+  border-bottom: none;
+}
+
 .islandcard__facts dt {
-  color: var(--color-text-dim);
+  color: rgba(255, 120, 180, 1);
   font-weight: 600;
+  transition: color 0.2s ease;
 }
+
+.fact:hover dt {
+  color: #0891B2;
+}
+
 .islandcard__facts dd {
   margin: 0;
+  color: #8B4C6B; 
+  font-weight: 500;
 }
 
 /* responsive stack */
@@ -112,7 +193,35 @@
   .islandcard__body {
     grid-template-columns: 1fr;
   }
-  .fact { grid-template-columns: 1fr; }
+  .fact { 
+    grid-template-columns: 1fr; 
+  }
 }
 
+.islandcard__left h3 {
+  color: rgba(255, 120, 180, 1);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  margin-top: 1.5rem;
+  transition: color 0.2s ease;
+}
 
+.islandcard__left h3:first-child {
+  margin-top: 0;
+}
+
+.islandcard:hover .islandcard__left h3 {
+  color: #0891B2;
+}
+
+.islandcard__left p {
+  color: #8B4C6B;
+  line-height: 1.7;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.islandcard__left p:last-child {
+  margin-bottom: 0;
+}
