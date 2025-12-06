@@ -13,13 +13,25 @@ export default function App() {
   /* BACKEND */
   const API = import.meta.env.VITE_API_URL;
   const [health, setHealth] = useState<any>(null);
+  const BACKEND_URL = "http://localhost:5000";
 
   useEffect(() => {
-    fetch('${API}/api/health')
-      .then(r => r.json())
-      .then(setHealth)
-      .catch(e => console.error('Backend connection failed:', e));
+    const checkBackend = async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/health`);
+        if (!res.ok) {
+          throw new Error(`Health check failed: ${res.status} ${res.statusText}`);
+        }
+        const data = await res.json(); // { status: "ok" }
+        console.log("Backend health:", data);
+      } catch (err) {
+        console.error("Backend connection failed:", err);
+      }
+    };
+  
+    checkBackend();
   }, []);
+  
 
 
   return (
