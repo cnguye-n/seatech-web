@@ -4,16 +4,17 @@ from flask_cors import CORS
 from pathlib import Path
 from sqlalchemy import text
 from dotenv import load_dotenv
-db = SQLAlchemy(app)
 from flask_sqlalchemy import SQLAlchemy
 
 FRONTEND_DEV = "http://localhost:5173"
 
+# Environment + Flask app setup
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
 app = Flask(__name__)
 CORS(app)
+
 
 # Config
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev")
