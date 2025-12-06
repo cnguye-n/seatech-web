@@ -4,6 +4,7 @@ from flask_cors import CORS
 from pathlib import Path
 from sqlalchemy import text
 from dotenv import load_dotenv
+db = SQLAlchemy(app)
 from flask_sqlalchemy import SQLAlchemy
 
 FRONTEND_DEV = "http://localhost:5173"

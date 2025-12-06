@@ -1,5 +1,6 @@
 // src/components/IslandCard/IslandCard.tsx
-import MapComponent from "../Map/MapComponent"; // use reusable map
+import MapComponent from "../Map/MapComponent";
+import { islandContent, defaultIslandContent } from "./IslandContent";
 import "./IslandCard.css";
 
 export type IslandFacts = {
@@ -17,7 +18,7 @@ type Props = {
   sanAndres?: { lat: number; lng: number };
 };
 
-// haversine distance (km)
+
 function distanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
   const toRad = (d: number) => (d * Math.PI) / 180;
   const R = 6371;
@@ -38,6 +39,9 @@ export default function IslandCard({
   const { lat, lng, areaKm2, elevationM } = facts;
   const dist = distanceKm({ lat, lng }, sanAndres);
 
+  //  get content: ID , name,  default
+  const content = islandContent[id] || islandContent[name] || defaultIslandContent;
+
   return (
     <article id={id} className="islandcard">
       <header className="islandcard__header">
@@ -48,11 +52,12 @@ export default function IslandCard({
       <p className="bodytext islandcard__subtitle">{description}</p>
 
       <div className="islandcard__body">
-        <div className="islandcard__left">{/* optional narrative area */}</div>
+        <div className="islandcard__left">
+          {content}
+        </div>
 
         <aside className="islandcard__box card">
           <div className="islandcard__mapwrap">
-            {/* Use MapComponent with a single point */}
             <MapComponent
               points={[{ name, coords: [lat, lng] }]}
               autoFit={false}                    
