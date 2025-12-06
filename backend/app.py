@@ -3,7 +3,6 @@ from flask import Flask, jsonify, request, redirect
 from flask_cors import CORS
 from pathlib import Path
 from dotenv import load_dotenv
-db = SQLAlchemy(app)
 from flask_sqlalchemy import SQLAlchemy
 from geoalchemy2 import Geometry
 
