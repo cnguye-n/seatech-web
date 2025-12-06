@@ -43,9 +43,24 @@ export default function Login() {
     console.log("Google credential:", response.credential);
 
     // You can decode the JWT token to get user info:
+    localStorage.setItem("google_credential", response.credential);
     const userObject = parseJwt(response.credential);
     setUser(userObject);
   };
+
+  useEffect(() => {
+  const storedToken = localStorage.getItem("google_credential");
+  if (!storedToken) return;
+
+  const userObject = parseJwt(storedToken);
+  if (userObject) {
+    setUser(userObject);
+  } else {
+    // token is broken/expired → clean it up
+    localStorage.removeItem("google_credential");
+  }
+}, []);
+
 
   const parseJwt = (token: string) => {
     try {
@@ -55,9 +70,18 @@ export default function Login() {
     }
   };
 
-  const handleLogout = () => {
-    setUser(null);
-  };
+const handleLogout = () => {
+  setUser(null);
+  localStorage.removeItem("google_credential");
+
+  // Optional: revoke Google session if you want to fully sign out:
+  if (window.google?.accounts?.id && user?.email) {
+    window.google.accounts.id.revoke(user.email, () => {
+      console.log("Google session revoked");
+    });
+  }
+};
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,9 +91,6 @@ export default function Login() {
   // Show logged-in user info or login UI
   return (
     <div style={styles.page}>
-        <div style={styles.divider}>
-          <span>or</span>
-        </div>
       <div style={styles.card}>
         {!user ? (
           <>
