@@ -1,10 +1,16 @@
 import os
-from flask import Flask, jsonify, request, redirect
+import datetime
+from flask import Flask, jsonify, request, redirect, abort
 from flask_cors import CORS
 from pathlib import Path
 from sqlalchemy import text
 from dotenv import load_dotenv
 from flask_sqlalchemy import SQLAlchemy
+
+from flask_bcrypt import Bcrypt
+from models import db, User
+from utility import user_exists
+import jwt
 
 FRONTEND_DEV = "http://localhost:5173"
 
@@ -14,6 +20,7 @@ load_dotenv(BASE_DIR / ".env")
 
 app = Flask(__name__)
 CORS(app)
+bcrypt = Bcrypt(app)
 
 
 # Config
@@ -25,12 +32,11 @@ app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev")
 #   pass: turtle_pass
 #   db:   turtle_tracking
 app.config["SQLALCHEMY_DATABASE_URI"] = (
-    "postgresql+psycopg2://turtle_user:turtle_pass@localhost/turtle_tracking"
+    "postgresql+psycopg2://turtle_user:turtles@localhost/turtle_tracking"
 )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-db = SQLAlchemy(app)
-
+db.init_app(app)
 # example model using plain lat/lon (no PostGIS needed)
 class Location(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -129,6 +135,47 @@ def get_turtle_path(turtle_id: int):
 
     return jsonify(rows), 200
 
+@app.route("/register", methods = ['POST'])
+def register_user():
+    email = request.json["email"]
+    password = request.json["password"]
+    if user_exists(User, email):
+        abort(409)
+    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+    print(hashed_password)
+    new_user = User(email=email, password=hashed_password)
+    db.session.add(new_user)
+    db.session.commit()
+    return jsonify({
+        "id": new_user.id,
+        "email": new_user.email
+    })
+
+@app.route("/login", methods=['POST'])
+def login_post():
+    email = request.json["email"]
+    password = request.json["password"]
+    user = User.query.filter_by(email=email).first()
+    
+    if not user or not bcrypt.check_password_hash(user.password, password):
+        abort(401)
+    
+    token = jwt.encode(
+        {
+            "id": user.id,
+            "email": user.email,
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=48)
+        },
+        app.config["SECRET_KEY"],
+        algorithm="HS256"
+    )
+    
+    return jsonify({
+        "email": email,
+        "token": token
+    }), 200
+
+
 # list turtles
 @app.route("/api/turtles", methods=["GET"])
 def list_turtles():
@@ -149,6 +196,7 @@ def list_turtles():
       for r in result
     ]
   return jsonify(turtles), 200
+  
 
 if __name__ == "__main__":
     print("Registered routes:", app.url_map)
