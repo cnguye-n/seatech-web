@@ -54,27 +54,27 @@ export default function About() {
             <div className="value-icon">
               <span>🌊</span>
             </div>
-            <h3 className="heading3">[Value 1]</h3>
+            <h3 className="heading3">[Accessible Innovation]</h3>
             <p className="bodytext">
-              VALUES
+              We develop open, affordable, and easy-to-build tracking systems that make wildlife monitoring possible for organizations of all sizes.
             </p>
           </div>
           <div className="card value-card">
             <div className="value-icon">
               <span>🐢</span>
             </div>
-            <h3 className="heading3">[Value 2]</h3>
+            <h3 className="heading3">[Interdisciplinary Collaboration]</h3>
             <p className="bodytext">
-              VALUES
+              We work across computer science, GIS, marine biology, and international research partners to build tools grounded in real field needs.
             </p>
           </div>
           <div className="card value-card">
             <div className="value-icon">
               <span>☀️</span>
             </div>
-            <h3 className="heading3">[Value 3]</h3>
+            <h3 className="heading3">[Science for Conservation Impact]</h3>
             <p className="bodytext">
-              VALUES
+              Every sensor, map, and dataset we create is designed to support actionable decisions that protect endangered sea turtles and the ecosystems they depend on.
             </p>
           </div>
         </div>
@@ -187,26 +187,37 @@ export default function About() {
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Advisors */}
+          {/* Advisors */}
           <div className="team-group-card">
             <h3 className="heading3 text-center">Advisors</h3>
             <div className="team-grid">
               <div className="team-member">
-                <div className="team-photo"></div>
+                <img
+                  className="team-photo"
+                  src="/images/alex-modaressi-avatar.png"
+                  alt="Alex Modaressi"
+                />
                 <h4 className="member-name">Alex Modaressi, Ph.D.</h4>
                 <p className="member-role">[Department of Computer Science]</p>
               </div>
 
               <div className="team-member">
-                <div className="team-photo"></div>
+                <img
+                  className="team-photo"
+                  src="/images/mario-giraldo-avatar.jpg"
+                  alt="Mario Giraldo"
+                />
                 <h4 className="member-name">Mario Giraldo, Ph.D.</h4>
                 <p className="member-role">[Geography and Environmental Studies]</p>
               </div>
             </div>
           </div>
+          
+        </div>
+      </div>
+
+      
 
       {/* stats (?) */}
       <div className="container stats-section">
