@@ -95,7 +95,11 @@ export default function About() {
             <h3 className="heading3 text-center">Computer Science / Engineering Team</h3>
             <div className="team-grid">
               <div className="team-member">
-                <div className="team-photo"></div>
+                <img
+                  className="team-photo"
+                  src="/images/people/bella-felipe-avatar.jpg"
+                  alt="Bella Felipe"
+                />
                 <h4 className="member-name">Bella Felipe</h4>
                 <p className="member-role">[Full Stack Lead]</p>
               </div>
@@ -107,7 +111,11 @@ export default function About() {
               </div>
 
               <div className="team-member">
-                <div className="team-photo"></div>
+                <img
+                  className="team-photo"
+                  src="/images/people/christine-nguyen-avatar.jpg"
+                  alt="Christine Nguyen"
+                />
                 <h4 className="member-name">Christine Nguyen</h4>
                 <p className="member-role">[President]</p>
               </div>
@@ -195,7 +203,7 @@ export default function About() {
               <div className="team-member">
                 <img
                   className="team-photo"
-                  src="/images/alex-modaressi-avatar.png"
+                  src="/images/people/alex-modaressi-avatar.png"
                   alt="Alex Modaressi"
                 />
                 <h4 className="member-name">Alex Modaressi, Ph.D.</h4>
@@ -205,7 +213,7 @@ export default function About() {
               <div className="team-member">
                 <img
                   className="team-photo"
-                  src="/images/mario-giraldo-avatar.jpg"
+                  src="/images/people/mario-giraldo-avatar.jpg"
                   alt="Mario Giraldo"
                 />
                 <h4 className="member-name">Mario Giraldo, Ph.D.</h4>
@@ -213,7 +221,7 @@ export default function About() {
               </div>
             </div>
           </div>
-          
+
         </div>
       </div>
 
