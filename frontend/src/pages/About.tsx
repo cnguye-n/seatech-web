@@ -9,7 +9,9 @@ export default function About() {
         <div className="hero-content">
           <p className="heading1">About Us</p>
           <p className="bodytext hero-text">
-            INTRO
+            SEAtech Research Initiative is a student-led interdisciplinary team developing low-cost, open-source tools for marine wildlife tracking. Formed from a university course and now operating as an interdisciplinary campus research club, we unite CS, GIS, and marine biology students 
+            to build a complete sensor-to-map system for sea turtles in the San Andrés Archipelago. Our work focuses on expanding access to affordable telemetry 
+            and advancing geospatial intelligence for conservation.
           </p>
         </div>
       </div>
@@ -20,7 +22,7 @@ export default function About() {
           {/*  group photo */}
           <div className="group-photo-container">
             <img 
-              src="/path-to-your-image.jpg" 
+              src="../../public/images/Photos/group-kitten.png" 
               alt="Team Group Photo" 
               className="group-photo-image"
             />
@@ -30,13 +32,13 @@ export default function About() {
             <div className="card">
               <h2 className="heading2">Our Mission</h2>
               <p className="bodytext">
-                MISSION SATEMENT
+                Our mission is to build accessible, low-cost tracking sensors and mapping systems that support science, conservation, and interdisciplinary student research.
               </p>
             </div>
             <div className="card">
               <h2 className="heading2">Our Vision</h2>
               <p className="bodytext">
-                VISION STATEMENT
+                Our vision is to foster a collaborative space where students of all disciplines grow, innovate, and work together to develop impactful solutions for marine conservation
               </p>
             </div>
           </div>
@@ -84,7 +86,7 @@ export default function About() {
         <div className="container">
           <h2 className="heading2 text-center">Meet the Team</h2>
           <p className="bodytext text-center team-intro">
-            CSUN CLUB...
+            SEAtech Research Initiative
           </p>
 
           
@@ -95,31 +97,31 @@ export default function About() {
               <div className="team-member">
                 <div className="team-photo"></div>
                 <h4 className="member-name">Bella Felipe</h4>
-                <p className="member-role">[Title/Role]</p>
+                <p className="member-role">[Full Stack Lead]</p>
               </div>
 
               <div className="team-member">
                 <div className="team-photo"></div>
                 <h4 className="member-name">Julian Lozada</h4>
-                <p className="member-role">[Title/Role]</p>
+                <p className="member-role">[Backend Lead]</p>
               </div>
 
               <div className="team-member">
                 <div className="team-photo"></div>
                 <h4 className="member-name">Christine Nguyen</h4>
-                <p className="member-role">[Title/Role]</p>
+                <p className="member-role">[President]</p>
               </div>
 
               <div className="team-member">
                 <div className="team-photo"></div>
                 <h4 className="member-name">Tyra Quiachon</h4>
-                <p className="member-role">[Title/Role]</p>
+                <p className="member-role">[Vice President]</p>
               </div>
 
               <div className="team-member">
                 <div className="team-photo"></div>
                 <h4 className="member-name">Max Woodruff</h4>
-                <p className="member-role">[Title/Role]</p>
+                <p className="member-role">[Research Lead]</p>
               </div>
             </div>
           </div>
@@ -132,13 +134,13 @@ export default function About() {
               <div className="team-member">
                 <div className="team-photo"></div>
                 <h4 className="member-name">Mik Kosoy</h4>
-                <p className="member-role">[Title/Role]</p>
+                <p className="member-role">[Vice President]</p>
               </div>
 
               <div className="team-member">
                 <div className="team-photo"></div>
                 <h4 className="member-name">Dianna Zamora</h4>
-                <p className="member-role">[Title/Role]</p>
+                <p className="member-role">[Social Media Coordinator]</p>
               </div>
             </div>
           </div>
@@ -151,55 +153,72 @@ export default function About() {
               <div className="team-member">
                 <div className="team-photo"></div>
                 <h4 className="member-name">Ashlee Campbell</h4>
-                <p className="member-role">[Title/Role]</p>
+                <p className="member-role">[Vice President]</p>
               </div>
 
               <div className="team-member">
                 <div className="team-photo"></div>
                 <h4 className="member-name">Alex Cervantes</h4>
-                <p className="member-role">[Title/Role]</p>
+                <p className="member-role">[GIS Lead]</p>
               </div>
 
               <div className="team-member">
                 <div className="team-photo"></div>
                 <h4 className="member-name">Marlon Flores</h4>
-                <p className="member-role">[Title/Role]</p>
+                <p className="member-role">[General Officer]</p>
               </div>
 
               <div className="team-member">
                 <div className="team-photo"></div>
                 <h4 className="member-name">Jeslyn Martinez</h4>
-                <p className="member-role">[Title/Role]</p>
+                <p className="member-role">[Secretary]</p>
               </div>
               
               <div className="team-member">
                 <div className="team-photo"></div>
                 <h4 className="member-name">Lorena Robles</h4>
-                <p className="member-role">[Title/Role]</p>
+                <p className="member-role">[General Officer]</p>
               </div>
 
               <div className="team-member">
                 <div className="team-photo"></div>
                 <h4 className="member-name">Carina</h4>
-                <p className="member-role">[Title/Role]</p>
+                <p className="member-role">[General Officer]</p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Advisors */}
+          <div className="team-group-card">
+            <h3 className="heading3 text-center">Advisors</h3>
+            <div className="team-grid">
+              <div className="team-member">
+                <div className="team-photo"></div>
+                <h4 className="member-name">Alex Modaressi, Ph.D.</h4>
+                <p className="member-role">[Department of Computer Science]</p>
+              </div>
+
+              <div className="team-member">
+                <div className="team-photo"></div>
+                <h4 className="member-name">Mario Giraldo, Ph.D.</h4>
+                <p className="member-role">[Geography and Environmental Studies]</p>
+              </div>
+            </div>
+          </div>
 
       {/* stats (?) */}
       <div className="container stats-section">
         <div className="card stats-card">
           <div className="stats-grid">
             <div className="stat-item">
-              <div className="stat-number">[#]</div>
-              <p className="stat-label">[Metric Label]</p>
+              <div className="stat-number">[4]</div>
+              <p className="stat-label">[Sensors]</p>
             </div>
             <div className="stat-item">
-              <div className="stat-number">[#]</div>
-              <p className="stat-label">[Metric Label]</p>
+              <div className="stat-number">[0]</div>
+              <p className="stat-label">[Turtle]</p>
             </div>
           </div>
         </div>
@@ -217,16 +236,16 @@ export default function About() {
           <div className="card partners-card">
             <div className="partners-grid">
               <div className="partner-logo">
-                <span>[Logo]</span>
+                <span>[SHEIN]</span>
               </div>
               <div className="partner-logo">
-                <span>[Logo]</span>
+                <span>[ALIEXPRESS]</span>
               </div>
               <div className="partner-logo">
-                <span>[Logo]</span>
+                <span>[TEMU]</span>
               </div>
               <div className="partner-logo">
-                <span>[Logo]</span>
+                <span>[ALIBABA]</span>
               </div>
             </div>
           </div>
