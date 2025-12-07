@@ -1,0 +1,119 @@
+.sensor-form {
+  width: 100%;
+  max-width: 840px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* tighter spacing so the user text isn't too far from the heading, you can delete this for default space */
+.sensor-banner p {
+  margin: 0.2rem 0;  
+  line-height: 1.3;
+}
+
+.section-title {
+  margin-bottom: 0.5rem;   /* match User Data spacing */
+  margin-top: 1rem;        /* smaller top spacing */
+}
+
+
+.upload-section {
+  margin-top: 1.5rem;   /* for the spacing between the form and the drag box */
+}
+
+.sensor-banner .heading3 {
+  margin-bottom: 0.75rem;   /* add separation under the title */
+}
+
+.user-group-text {
+  font-size: 1rem;              /* larger */
+  font-weight: 600;             /* semi-bold */
+  color: var(--color-text);                  /* black */
+  margin-top: 0.25rem;
+}
+
+
+.sensor-form-row {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.sensor-form-row-two {
+  flex-direction: row;
+  gap: var(--space-3);
+}
+
+.sensor-label {
+  flex: 1;
+  font-size: 0.85rem;
+  color: var(--color-text);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.sensor-input,
+.sensor-textarea {
+  width: 100%;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  padding: 0.45rem 0.7rem;
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.sensor-input:focus,
+.sensor-textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px rgba(110, 167, 249, 0.3);
+}
+
+.sensor-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-2);
+}
+
+.sensor-banner {
+  padding: var(--space-2) var(--space-3);
+  background: rgba(110, 167, 249, 0.08);
+  border: 1px solid rgba(110, 167, 249, 0.2);
+  border-radius: var(--radius);
+}
+
+.bodytext-sm {
+  font-size: 0.8rem;
+  color: var(--color-text-dim);
+}
+
+.register-btn {
+  border: 2px solid rgba(110, 167, 249, 0.4);   /* soft ocean-blue outline */
+  background-color: var(--color-primary);                    /* or keep your existing bg */
+  color: white;
+  padding: 0.6rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
+
+.register-btn:hover {
+  border-color: rgba(110, 167, 249, 0.7);
+  background-color: var(--color-primary);
+}
+
+
+
+@media (max-width: 720px) {
+  .sensor-form-row-two {
+    flex-direction: column;
+  }
+
+  .sensor-form {
+    max-width: 100%;
+  }
+}
