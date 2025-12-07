@@ -8,6 +8,10 @@ import TurtlePage from './pages/TurtlePage';
 import Login from './pages/login';
 import { useEffect, useState } from 'react';
 import SensorPage from './pages/SensorPage';
+import ManagePage from './pages/ManagePage';
+
+import { AuthProvider } from "./auth/AuthContext.tsx";
+import ProtectedRoute from "./auth/ProtectedRoute";
 
 export default function App() {
   /* BACKEND */
@@ -36,9 +40,18 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <AuthProvider>
       <AppContainer>
         <Routes>
           <Route path="/" element={<Homepage />} />
+          <Route
+            path="/manage"
+            element={
+              <ProtectedRoute>
+                <ManagePage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/islands" element={<IslandPage />} />
           <Route path="/about" element={<About />} />
           <Route path="/turtles" element={<TurtlePage />} />
@@ -47,6 +60,7 @@ export default function App() {
           {/* more routes here */}
         </Routes>
       </AppContainer>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

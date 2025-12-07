@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useAuth } from "../auth/AuthContext";
 
 declare global {
   interface Window {
@@ -7,7 +8,7 @@ declare global {
 }
 
 export default function Login() {
-  const [user, setUser] = useState<any>(null);
+  const { user, loginWithGoogleToken, logout } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
@@ -20,17 +21,21 @@ export default function Login() {
     document.body.appendChild(script);
 
     script.onload = () => {
-      if (window.google) {
-        window.google.accounts.id.initialize({
-          client_id: "1070305574453-fmq2q4sitlur2fnmp16qq1enkfg4t0n5.apps.googleusercontent.com", // This is tied to my personal account, it probably shouldn't be LOL
-          callback: handleGoogleResponse,
-        });
+      if (!window.google) return;
 
-        // Render Google button automatically
-        window.google.accounts.id.renderButton(
-          document.getElementById("googleSignInDiv"),
-          { theme: "outline", size: "large", width: 260 }
-        );
+      window.google.accounts.id.initialize({
+        client_id:
+          "1070305574453-fmq2q4sitlur2fnmp16qq1enkfg4t0n5.apps.googleusercontent.com",
+        callback: handleGoogleResponse,
+      });
+
+      const target = document.getElementById("googleSignInDiv");
+      if (target) {
+        window.google.accounts.id.renderButton(target, {
+          theme: "outline",
+          size: "large",
+          width: 260,
+        });
       }
     };
 
@@ -39,49 +44,23 @@ export default function Login() {
     };
   }, []);
 
-  const handleGoogleResponse = (response: any) => {
+  function handleGoogleResponse(response: any) {
     console.log("Google credential:", response.credential);
-
-    // You can decode the JWT token to get user info:
-    localStorage.setItem("google_credential", response.credential);
-    const userObject = parseJwt(response.credential);
-    setUser(userObject);
-  };
-
-  useEffect(() => {
-  const storedToken = localStorage.getItem("google_credential");
-  if (!storedToken) return;
-
-  const userObject = parseJwt(storedToken);
-  if (userObject) {
-    setUser(userObject);
-  } else {
-    // token is broken/expired → clean it up
-    localStorage.removeItem("google_credential");
+    // Hand token to AuthContext (it will store in localStorage + decode)
+    loginWithGoogleToken(response.credential);
   }
-}, []);
 
+  function handleLogout() {
+    const email = user?.email;
+    logout(); // clears context + localStorage
 
-  const parseJwt = (token: string) => {
-    try {
-      return JSON.parse(atob(token.split(".")[1]));
-    } catch (e) {
-      return null;
+    // Optional: revoke Google session as well
+    if (window.google?.accounts?.id && email) {
+      window.google.accounts.id.revoke(email, () => {
+        console.log("Google session revoked");
+      });
     }
-  };
-
-const handleLogout = () => {
-  setUser(null);
-  localStorage.removeItem("google_credential");
-
-  // Optional: revoke Google session if you want to fully sign out:
-  if (window.google?.accounts?.id && user?.email) {
-    window.google.accounts.id.revoke(user.email, () => {
-      console.log("Google session revoked");
-    });
   }
-};
-
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,39 +74,53 @@ const handleLogout = () => {
         {!user ? (
           <>
             <h1 style={styles.title}>Login</h1>
-                  <form onSubmit={handleSubmit} style={styles.form}>
-        <div>
-          <input
-            type="text"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            style={styles.input}
-          />
-          </div>
-        <div>
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={styles.input}
-          />
-          </div>
-          <button type="submit" style={styles.button}>
-            Log In
-          </button>
-        </form>
-            <div id="googleSignInDiv" style={{ marginTop: "20px", display: "flex", justifyContent: "center" }}></div>
+            <form onSubmit={handleSubmit} style={styles.form}>
+              <div>
+                <input
+                  type="text"
+                  placeholder="Username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  style={styles.input}
+                />
+              </div>
+              <div>
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  style={styles.input}
+                />
+              </div>
+              <button type="submit" style={styles.button}>
+                Log In
+              </button>
+            </form>
+
+            <div
+              id="googleSignInDiv"
+              style={{
+                marginTop: "20px",
+                display: "flex",
+                justifyContent: "center",
+              }}
+            />
           </>
         ) : (
           <>
             <h1 style={styles.title}>Welcome, {user.name}</h1>
-            <img
-              src={user.picture}
-              alt="Profile"
-              style={{ borderRadius: "50%", width: "80px", margin: "1rem 0" }}
-            />
+            {user.picture && (
+              <img
+                src={user.picture}
+                alt="Profile"
+                style={{
+                  borderRadius: "50%",
+                  width: "80px",
+                  margin: "1rem 0",
+                }}
+              />
+            )}
             <p style={styles.subtitle}>{user.email}</p>
             <button style={styles.button} onClick={handleLogout}>
               Log out
@@ -140,7 +133,7 @@ const handleLogout = () => {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-     page: {
+  page: {
     minHeight: "100vh",
     display: "flex",
     alignItems: "center",
@@ -169,4 +162,7 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     marginTop: "1rem",
   },
+  // optional, but you’re already using these keys:
+  form: {},
+  input: {},
 };

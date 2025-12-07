@@ -1,4 +1,5 @@
 import { NavLink, Link, useNavigate } from 'react-router-dom';
+import { useAuth } from "../../auth/AuthContext";
 import './Navbar.css';
 
 const islands = [
@@ -11,16 +12,23 @@ const islands = [
 ];
 
 export default function Navbar() {
+
   const navigate = useNavigate();
+  const { isAuthenticated, user, logout } = useAuth();
 
   const goToIsland = (id: string) => {
     navigate(`/islands#${id}`);
   };
 
+  const handleLogoutClick = () => {
+    logout();
+    navigate("/"); // send them home after logout if you want
+  };
+
   return (
     <nav className="navbar">
       <div className="nav-inner">
-        <Link to="/" className="nav-logo">logo</Link>
+        <Link to="/" className="nav-logo">SEAtech</Link>
 
         <ul className="nav-menu">
           <li className="nav-item">
@@ -28,7 +36,7 @@ export default function Navbar() {
               Home
             </NavLink>
           </li>
-
+          
           {/* Dropdown */}
           <li className="nav-item dropdown">
             <span className="nav-link nav-link-static">
@@ -58,13 +66,46 @@ export default function Navbar() {
             </NavLink>
           </li>
 
-          <li className="nav-item">
-            <NavLink to="/login" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-              Login
-            </NavLink>
-          </li>
+          {isAuthenticated && (
+            <li className="nav-item">
+              <NavLink
+                to="/manage"
+                className={({ isActive }) =>
+                  isActive ? "nav-link active" : "nav-link"
+                }
+              >
+                Manage
+              </NavLink>
+            </li>
+          )}
+
+          {!isAuthenticated ? (
+            <li className="nav-item">
+              <NavLink
+                to="/login"
+                className={({ isActive }) =>
+                  isActive ? "nav-link active" : "nav-link"
+                }
+              >
+                Login
+              </NavLink>
+            </li>
+          ) : (
+            <li className="nav-item">
+              <button
+                type="button"
+                className="nav-link nav-link-static nav-link-button"
+                onClick={handleLogoutClick}
+              >
+                Logout{user?.name ? ` (${user.name.split(" ")[0]})` : ""}
+              </button>
+            </li>
+          )}
         </ul>
       </div>
     </nav>
   );
 }
+
+
+

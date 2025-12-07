@@ -13,6 +13,8 @@
   transition: background 0.3s ease, backdrop-filter 0.3s ease;
 
 }
+
+
 .nav-inner {
   width: 100%;
   height: var(--nav-h);                /* Nicepage-like height */
@@ -30,6 +32,15 @@
   letter-spacing: .5px;
   text-decoration: none;
 }
+
+/* ===== Button in the nav bar  ===== */
+.nav-link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
 
 /* ===== Menu row ===== */
  /* gets rid of the bullet points */
