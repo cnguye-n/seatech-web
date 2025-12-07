@@ -22,7 +22,7 @@ export default function About() {
           {/*  group photo */}
           <div className="group-photo-container">
             <img 
-              src="../../public/images/Photos/group-kitten.png" 
+              src="/images/Photos/group-kitten.png" 
               alt="Team Group Photo" 
               className="group-photo-image"
             />
