@@ -1,0 +1,94 @@
+.upload-file-box {
+  width: 100%;
+  max-width: 800px;          /* a bit narrower */
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.drop-zone {
+  width: 100%;
+  padding: var(--space-3);   /* was var(--space-6) */
+  border-radius: var(--radius);
+  border: 2px dashed var(--color-border);
+  background: rgba(255, 255, 255, 0.01);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 160px;          /* was 160px */
+}
+
+.drop-zone-text-main {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.drop-zone-text-sub {
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  color: var(--color-text-dim);
+}
+
+.upload-btn {
+  margin-top: var(--space-2);
+  width: 100%;
+  text-align: center;
+
+  padding: 0.6rem 0;              /* matches Register Sensor height */
+  font-size: 0.9rem;
+  font-weight: 600;
+
+  background-color: var(--color-primary);
+  color: white;
+
+  border: none;
+  border-radius: 12px;            /* <-- matches your Register Sensor button */
+  cursor: pointer;
+
+  transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.upload-btn:hover:not(:disabled) {
+  transform: translateY(-1px);    /* optional small hover lift */
+}
+
+.upload-btn:disabled {
+  background-color: #e5e5e5;
+  color: #777;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.upload-error {
+  color: #d83535;           /* bright red for error message */
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+
+/* Mobile tweak */
+@media (max-width: 640px) {
+  .upload-file-box {
+    max-width: 100%;
+  }
+
+  .drop-zone {
+    padding: var(--space-3);
+    min-height: 80px;
+  }
+
+  .upload-btn {
+    width: 100%;
+    align-self: stretch;
+    justify-content: center;
+  }
+}
