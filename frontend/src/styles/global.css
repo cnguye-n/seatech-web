@@ -125,7 +125,7 @@
   --container-pad: 1rem;    /* side padding for mobile */
 
   /* ===== Navbar sizing ===== */
-  :root { --nav-h: 80px; } 
+  --nav-h: 80px;
 }
 
 /* ----------------------------------------------------------
@@ -359,5 +359,17 @@ code, pre {
 @media (prefers-reduced-motion: reduce) {
   .reveal { opacity: 1 !important; transform: none !important; }
 }
+
+/* ----------------------------------------------------------
+   9) NAVBAR CLEARANCE - FIXED FOR ALL PAGES
+   ---------------------------------------------------------- */
+/* Global navbar clearance - ensures all pages have space below fixed navbar */
 .app > main,
-main { padding-top: var(--nav-h); }
+main { 
+  padding-top: var(--nav-h) !important;
+}
+
+/* Extra protection: ensure first section always has proper spacing */
+main > *:first-child {
+  padding-top: var(--space-4);
+}

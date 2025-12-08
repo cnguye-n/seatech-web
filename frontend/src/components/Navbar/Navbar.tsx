@@ -37,7 +37,7 @@ export default function Navbar() {
             </NavLink>
           </li>
           
-          {/* Dropdown */}
+          {/* dropdown */}
           <li className="nav-item dropdown">
             <span className="nav-link nav-link-static">
               Islands <span className="caret">▾</span>
@@ -91,14 +91,46 @@ export default function Navbar() {
               </NavLink>
             </li>
           ) : (
-            <li className="nav-item">
-              <button
-                type="button"
-                className="nav-link nav-link-static nav-link-button"
-                onClick={handleLogoutClick}
-              >
-                Logout{user?.name ? ` (${user.name.split(" ")[0]})` : ""}
-              </button>
+            <li className="nav-item dropdown">
+              <span className="nav-link nav-link-static">
+                {user?.picture && (
+                  <img
+                    src={user.picture}
+                    alt="Profile"
+                    style={{
+                      width: "28px",
+                      height: "28px",
+                      borderRadius: "50%",
+                      marginRight: "8px",
+                      verticalAlign: "middle",
+                      border: "2px solid white"
+                    }}
+                  />
+                )}
+                {user?.name ? user.name.split(" ")[0] : "User"}
+                <span className="caret">▾</span>
+              </span>
+
+              <ul className="dropdown-menu">
+                <li>
+                  <button
+                    type="button"
+                    className="dropdown-link"
+                    onClick={() => navigate("/settings")}
+                  >
+                    ⚙️ Settings
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    className="dropdown-link"
+                    onClick={handleLogoutClick}
+                  >
+                    Log Out
+                  </button>
+                </li>
+              </ul>
             </li>
           )}
         </ul>
@@ -106,6 +138,3 @@ export default function Navbar() {
     </nav>
   );
 }
-
-
-

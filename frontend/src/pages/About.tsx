@@ -105,7 +105,11 @@ export default function About() {
               </div>
 
               <div className="team-member">
-                <div className="team-photo"></div>
+                <img
+                  className="team-photo"
+                  src="/images/people/julian-lozada-avatar.jpg"
+                  alt="Julian Lozada"
+                />
                 <h4 className="member-name">Julian Lozada</h4>
                 <p className="member-role">[Backend Lead]</p>
               </div>
@@ -121,7 +125,11 @@ export default function About() {
               </div>
 
               <div className="team-member">
-                <div className="team-photo"></div>
+                <img
+                  className="team-photo"
+                  src="/images/people/tyra-quiachon-avatar.png"
+                  alt="Tyra Quiachon"
+                />
                 <h4 className="member-name">Tyra Quiachon</h4>
                 <p className="member-role">[Vice President]</p>
               </div>
@@ -159,7 +167,11 @@ export default function About() {
             <h3 className="heading3 text-center">GEO/GIS Team</h3>
             <div className="team-grid">
               <div className="team-member">
-                <div className="team-photo"></div>
+                <img
+                  className="team-photo"
+                  src="/images/people/ashlee-campbell-avatar.png"
+                  alt="Ashlee Campbell"
+                />
                 <h4 className="member-name">Ashlee Campbell</h4>
                 <p className="member-role">[Vice President]</p>
               </div>

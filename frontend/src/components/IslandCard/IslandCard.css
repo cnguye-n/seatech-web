@@ -23,7 +23,7 @@
 .islandcard__title {
   margin: 0 0 var(--space-3);
   color: #0891B2;
-  font-weight: 700;
+  font-weight: 800;
   transition: color 0.3s ease;
 }
 
@@ -41,10 +41,10 @@
   border-radius: 999px;
   background: radial-gradient(
     ellipse at center,
-    #0891B2 0%,
-    #80DEEA 25%,
-    rgba(255, 160, 200, 0.9) 60%,
-    rgba(255, 120, 180, 0.5) 100%
+    #66BB6A 0%,
+    #81C784 25%,
+    rgba(8, 145, 178, 0.9) 60%,
+    rgba(0, 131, 143, 0.5) 100%
   );
   opacity: 0.95;
 }
@@ -68,12 +68,12 @@
   padding: var(--space-6);
   background: linear-gradient(
     135deg,
-    #FFD9EC 0%,
-    #FFE0F0 50%,
+    #E8F5E9 0%,
+    #F1F8E9 50%,
     #FFFFFF 100%
   );
-  box-shadow: 0 4px 15px rgba(255, 160, 200, 0.15);
-  border: 2px solid rgba(255, 160, 200, 0.3);
+  box-shadow: 0 4px 15px rgba(129, 199, 132, 0.15);
+  border: 2px solid rgba(129, 199, 132, 0.3);
   transition: box-shadow 0.3s ease, border-color 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -87,7 +87,7 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(8, 145, 178, 0.15), transparent);
+  background: linear-gradient(90deg, transparent, rgba(129, 199, 132, 0.15), transparent);
   transition: left 0.6s ease;
   pointer-events: none;
 }
@@ -97,44 +97,51 @@
 }
 
 .islandcard__body:hover {
-  box-shadow: 0 6px 25px rgba(8, 145, 178, 0.2);
-  border-color: rgba(128, 222, 234, 0.6);
+  box-shadow: 0 6px 25px rgba(129, 199, 132, 0.2);
+  border-color: rgba(129, 199, 132, 0.6);
 }
 
 .islandcard__left {
   min-height: 220px;
-  color: #8B4C6B;
+  color: #212121;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  border: none;
+  box-shadow: none;
 }
 
 .islandcard__box {
-  background: #FFFFFF;  border: 2px solid rgba(255, 160, 200, 0.2); 
+  background: #FFFFFF;
+  border: 2px solid rgba(129, 199, 132, 0.2); 
   border-radius: 1rem;
   backdrop-filter: blur(8px);
   padding: 1.5rem;
-  box-shadow: 0 4px 15px rgba(255, 160, 200, 0.1);
+  box-shadow: 0 4px 15px rgba(129, 199, 132, 0.1);
   transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
 .islandcard__box:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(8, 145, 178, 0.25); 
-  border-color: rgba(128, 222, 234, 0.5); 
+  background: #F1F8F4;
+  box-shadow: 0 6px 20px rgba(129, 199, 132, 0.25); 
+  border-color: rgba(129, 199, 132, 0.5); 
 }
 
 .islandcard__mapwrap {
   aspect-ratio: 1 / 1;
   border-radius: 1rem;
   overflow: hidden;
-  box-shadow: 0 4px 15px rgba(255, 160, 200, 0.2); 
+  box-shadow: 0 4px 15px rgba(129, 199, 132, 0.2); 
   margin-bottom: var(--space-4);
-  border: 2px solid rgba(255, 160, 200, 0.15); 
+  border: 2px solid rgba(129, 199, 132, 0.15); 
   transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
 .islandcard__mapwrap:hover {
   transform: scale(1.02);
-  box-shadow: 0 6px 25px rgba(8, 145, 178, 0.3);
-  border-color: rgba(128, 222, 234, 0.6);
+  box-shadow: 0 6px 25px rgba(129, 199, 132, 0.3);
+  border-color: rgba(129, 199, 132, 0.6);
 }
 
 .islandcard__map {
@@ -159,13 +166,21 @@
   grid-template-columns: 160px 1fr;
   gap: 12px;
   padding: 0.5rem 0;
-  border-bottom: 1px solid rgba(255, 160, 200, 0.1);
+  border-bottom: 1px solid rgba(129, 199, 132, 0.1);
   transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 .fact:hover {
-  border-color: rgba(128, 222, 234, 0.4); 
-  background: linear-gradient(90deg, transparent, rgba(8, 145, 178, 0.05), transparent); 
+  border-color: rgba(129, 199, 132, 0.4); 
+  background: transparent;
+}
+
+.fact:hover dt {
+  color: #0891B2;
+}
+
+.fact:hover dd {
+  color: #66BB6A;
 }
 
 .fact:last-child {
@@ -173,19 +188,20 @@
 }
 
 .islandcard__facts dt {
-  color: rgba(255, 120, 180, 1);
-  font-weight: 600;
-  transition: color 0.2s ease;
-}
-
-.fact:hover dt {
   color: #0891B2;
+  font-weight: 700;
+  transition: color 0.2s ease;
 }
 
 .islandcard__facts dd {
   margin: 0;
-  color: #8B4C6B; 
+  color: #212121; 
   font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.fact:hover dd {
+  color: #558B2F;
 }
 
 /* responsive stack */
@@ -199,9 +215,9 @@
 }
 
 .islandcard__left h3 {
-  color: rgba(255, 120, 180, 1);
+  color: #0891B2;
   font-size: 1.25rem;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 0.5rem;
   margin-top: 1.5rem;
   transition: color 0.2s ease;
@@ -216,10 +232,15 @@
 }
 
 .islandcard__left p {
-  color: #8B4C6B;
+  color: #212121;
   line-height: 1.7;
   margin-bottom: 1rem;
   font-size: 0.95rem;
+  transition: color 0.2s ease;
+}
+
+.islandcard__left p:hover {
+  color: #558B2F;
 }
 
 .islandcard__left p:last-child {
