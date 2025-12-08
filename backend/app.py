@@ -19,15 +19,15 @@ CORS(app)
 # Config
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev")
 
-# can use .env later, but for now hardcoding the working DB url
-# so it matches what was created in psql:
-#   user: turtle_user
-#   pass: turtle_pass
-#   db:   turtle_tracking
-app.config["SQLALCHEMY_DATABASE_URI"] = (
-    "postgresql+psycopg2://turtle_user:turtle_pass@localhost/turtle_tracking"
+# Use Supabase DATABASE_URL, otherwise fall back to local Postgres
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
+    "DATABASE_URL",
+    "postgresql+psycopg2://turtle_user:turtle_pass@localhost/turtle_tracking",
 )
+
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+print("DB URI in use:", app.config["SQLALCHEMY_DATABASE_URI"])
 
 db = SQLAlchemy(app)
 
