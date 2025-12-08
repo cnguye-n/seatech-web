@@ -9,6 +9,8 @@ import Login from './pages/login';
 import { useEffect, useState } from 'react';
 import SensorPage from './pages/SensorPage';
 import ManagePage from './pages/ManagePage';
+import Settings from './pages/Settings';
+import Scroll from './components/Scroll';
 
 import { AuthProvider } from "./auth/AuthContext.tsx";
 import ProtectedRoute from "./auth/ProtectedRoute";
@@ -40,6 +42,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <Scroll />
       <AuthProvider>
       <AppContainer>
         <Routes>
@@ -57,7 +60,7 @@ export default function App() {
           <Route path="/turtles" element={<TurtlePage />} />
           <Route path="/sensor" element={<SensorPage />} />
           <Route path="/login" element={<Login />} />
-          {/* more routes here */}
+          <Route path="/settings" element={<Settings />} />
         </Routes>
       </AppContainer>
       </AuthProvider>
