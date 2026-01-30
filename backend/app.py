@@ -24,9 +24,21 @@ app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev")
 #   user: turtle_user
 #   pass: turtle_pass
 #   db:   turtle_tracking
-app.config["SQLALCHEMY_DATABASE_URI"] = (
-    "postgresql+psycopg2://turtle_user:turtle_pass@localhost/turtle_tracking"
-)
+#app.config["SQLALCHEMY_DATABASE_URI"] = (
+#    "postgresql+psycopg2://turtle_user:turtle_pass@localhost/turtle_tracking"
+#)
+ 
+#commented the above to use supabase hosted db instead of hardcoded
+# Database
+db_url = os.getenv("DATABASE_URL")  # put this in backend/.env
+if not db_url:
+    raise RuntimeError("DATABASE_URL not set. Add it to backend/.env")
+
+# SQLAlchemy commonly wants this prefix
+if db_url.startswith("postgresql://"):
+    db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
