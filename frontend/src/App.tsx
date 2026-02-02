@@ -12,14 +12,17 @@ import ManagePage from './pages/ManagePage';
 import Settings from './pages/Settings';
 import Scroll from './components/Scroll';
 
+import Unauthorized from "./pages/Unauthorized";
+
 import { AuthProvider } from "./auth/AuthContext.tsx";
 import ProtectedRoute from "./auth/ProtectedRoute";
+import RoleProtectedRoute from "./auth/RoleProtectedRoute";
 
 export default function App() {
   /* BACKEND */
   const API = import.meta.env.VITE_API_URL;
   const [health, setHealth] = useState<any>(null);
-  const BACKEND_URL = "http://localhost:5000";
+  const BACKEND_URL = "http://localhost:5001";
 
   useEffect(() => {
     const checkBackend = async () => {
@@ -34,35 +37,48 @@ export default function App() {
         console.error("Backend connection failed:", err);
       }
     };
-  
+
     checkBackend();
   }, []);
-  
-
 
   return (
     <BrowserRouter>
       <Scroll />
       <AuthProvider>
-      <AppContainer>
-        <Routes>
-          <Route path="/" element={<Homepage />} />
-          <Route
-            path="/manage"
-            element={
-              <ProtectedRoute>
-                <ManagePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/islands" element={<IslandPage />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/turtles" element={<TurtlePage />} />
-          <Route path="/sensor" element={<SensorPage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/settings" element={<Settings />} />
-        </Routes>
-      </AppContainer>
+        <AppContainer>
+          <Routes>
+            <Route path="/" element={<Homepage />} />
+
+            <Route
+              path="/manage"
+              element={
+                <ProtectedRoute>
+                  <ManagePage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route path="/islands" element={<IslandPage />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/turtles" element={<TurtlePage />} />
+
+            {/* Add this */}
+            <Route path="/unauthorized" element={<Unauthorized />} />
+
+            {/* Change this: protect sensor page by role */}
+            <Route
+              path="/sensor"
+              element={
+                <RoleProtectedRoute allow={["admin", "member"]}>
+                  <SensorPage />
+                </RoleProtectedRoute>
+              }
+            />
+
+            <Route path="/login" element={<Login />} />
+            <Route path="/settings" element={<Settings />} />
+          </Routes>
+        </AppContainer>
       </AuthProvider>
     </BrowserRouter>
   );

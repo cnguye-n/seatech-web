@@ -6,10 +6,13 @@ import {
   ReactNode,
 } from "react";
 
+type Role = "admin" | "member" | "viewer";
+
 type AuthUser = {
   name: string;
   email: string;
   picture?: string;
+  role: Role;
 } | null;
 
 type AuthContextValue = {
@@ -30,6 +33,20 @@ function parseJwt(token: string) {
     return null;
   }
 }
+const API_BASE = "http://localhost:5001";
+
+async function fetchMe(token: string) {
+  const res = await fetch(`${API_BASE}/api/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Not authorized");
+  return res.json() as Promise<{
+    name: string;
+    email: string;
+    picture?: string;
+    role: Role;
+  }>;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser>(null);
@@ -39,29 +56,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem(GOOGLE_TOKEN_KEY);
     if (!token) return;
 
-    const payload = parseJwt(token);
-    if (payload) {
-      setUser({
-        name: payload.name,
-        email: payload.email,
-        picture: payload.picture,
-      });
-    } else {
-      localStorage.removeItem(GOOGLE_TOKEN_KEY);
-    }
+    (async () => {
+      try {
+        const me = await fetchMe(token);
+        setUser({
+          name: me.name,
+          email: me.email,
+          picture: me.picture,
+          role: me.role ?? "viewer",
+        });
+      } catch {
+        localStorage.removeItem(GOOGLE_TOKEN_KEY);
+        setUser(null);
+      }
+    })();
   }, []);
 
   const loginWithGoogleToken = (token: string) => {
+    // TEMP: force save so we can see if something clears it
     localStorage.setItem(GOOGLE_TOKEN_KEY, token);
-    const payload = parseJwt(token);
-    if (payload) {
-      setUser({
-        name: payload.name,
-        email: payload.email,
-        picture: payload.picture,
-      });
-    }
+    console.log(
+      "localStorage after set:",
+      localStorage.getItem(GOOGLE_TOKEN_KEY)
+    );
+
+    (async () => {
+      try {
+        const me = await fetchMe(token);
+
+        setUser({
+          name: me.name,
+          email: me.email,
+          picture: me.picture,
+          role: me.role ?? "viewer",
+        });
+      } catch (err) {
+        console.error("fetchMe failed:", err);
+        localStorage.removeItem(GOOGLE_TOKEN_KEY);
+        setUser(null);
+      }
+    })();
   };
+
 
   const logout = () => {
     setUser(null);

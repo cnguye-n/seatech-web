@@ -4,7 +4,13 @@ import "../styles/pages/sensors.css";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-const API_BASE = "http://localhost:5000"; // backend base URL
+const API_BASE = "http://localhost:5001"; // backend base URL
+const GOOGLE_TOKEN_KEY = "google_credential";
+
+const authHeaders = () => {
+  const token = localStorage.getItem(GOOGLE_TOKEN_KEY);
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 type SensorStatus = "online" | "offline" | "warning";
 
@@ -80,7 +86,9 @@ const SensorPage: React.FC = () => {
   useEffect(() => {
     const fetchTurtles = async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/turtles`);
+        const res = await fetch(`${API_BASE}/api/turtles`, {
+          headers: authHeaders(),
+      });
         if (!res.ok) {
           console.error("Failed to fetch turtles", res.statusText);
           return;
@@ -159,9 +167,9 @@ const SensorPage: React.FC = () => {
         return;
       }
       try {
-        const res = await fetch(
-          `${API_BASE}/api/turtles/${activeSensor.id}/path`
-        );
+        const res = await fetch(`${API_BASE}/api/turtles/${activeSensor.id}/path`, {
+          headers: authHeaders(),
+      });
         if (!res.ok) {
           console.error("Failed to fetch turtle path", res.statusText);
           setActiveTrack(null);

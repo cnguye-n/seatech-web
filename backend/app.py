@@ -1,10 +1,16 @@
 import os
-from flask import Flask, jsonify, request, redirect
+from flask import Flask, jsonify, request, redirect, g
 from flask_cors import CORS
 from pathlib import Path
 from sqlalchemy import text
 from dotenv import load_dotenv
+load_dotenv()
+print("DATABASE_URL =", os.getenv("DATABASE_URL"))
+
 from flask_sqlalchemy import SQLAlchemy
+from auth import require_auth
+from roles import get_role
+
 
 FRONTEND_DEV = "http://localhost:5173"
 
@@ -13,7 +19,7 @@ BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["http://localhost:5173"], supports_credentials=True)
 
 
 # Config
@@ -24,9 +30,21 @@ app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev")
 #   user: turtle_user
 #   pass: turtle_pass
 #   db:   turtle_tracking
-app.config["SQLALCHEMY_DATABASE_URI"] = (
-    "postgresql+psycopg2://turtle_user:turtle_pass@localhost/turtle_tracking"
-)
+#app.config["SQLALCHEMY_DATABASE_URI"] = (
+#    "postgresql+psycopg2://turtle_user:turtle_pass@localhost/turtle_tracking"
+#)
+ 
+#commented the above to use supabase hosted db instead of hardcoded
+# Database
+db_url = os.getenv("DATABASE_URL")  # put this in backend/.env
+if not db_url:
+    raise RuntimeError("DATABASE_URL not set. Add it to backend/.env")
+
+# SQLAlchemy commonly wants this prefix
+if db_url.startswith("postgresql://"):
+    db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
@@ -39,7 +57,11 @@ class Location(db.Model):
     longitude = db.Column(db.Float, nullable=False)
 
 with app.app_context():
-    db.create_all()
+    try:
+        db.create_all()
+    except Exception as e:
+        print("db.create_all failed:", e)
+
 
 # Routes
 @app.route("/api/health", methods=["GET"])
@@ -150,6 +172,17 @@ def list_turtles():
     ]
   return jsonify(turtles), 200
 
+@app.get("/api/me")
+@require_auth
+def me():
+    return jsonify({
+        "email": g.user_email,
+        "name": g.user_name,
+        "picture": g.user_picture,
+        "role": get_role(g.user_email),
+    })
+    
 if __name__ == "__main__":
     print("Registered routes:", app.url_map)
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5001)
+    
