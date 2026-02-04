@@ -1,9 +1,5 @@
-import React, {
-  useState,
-  useRef,
-  DragEvent,
-  ChangeEvent,
-} from "react";
+import React, { useState, useRef } from "react";
+import type { DragEvent, ChangeEvent } from "react";
 import "./UploadFileBox.css";
 
 export type UploadFileBoxProps = {

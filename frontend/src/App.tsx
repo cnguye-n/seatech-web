@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react';
 import SensorPage from './pages/SensorPage';
 import ManagePage from './pages/ManagePage';
 import Settings from './pages/Settings';
-import Scroll from './components/Scroll';
+import Scroll from './components/scroll';
 
 import Unauthorized from "./pages/Unauthorized";
 

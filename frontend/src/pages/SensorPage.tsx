@@ -7,10 +7,12 @@ import "leaflet/dist/leaflet.css";
 const API_BASE = "http://localhost:5001"; // backend base URL
 const GOOGLE_TOKEN_KEY = "google_credential";
 
-const authHeaders = () => {
+function authHeaders(): Record<string, string> {
   const token = localStorage.getItem(GOOGLE_TOKEN_KEY);
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
+  }
 
 type SensorStatus = "online" | "offline" | "warning";
 
