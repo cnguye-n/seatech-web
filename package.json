@@ -3,17 +3,19 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev:frontend": "npm run dev --prefix frontend",
-    "dev:backend": "backend/venv/bin/python backend/app.py",
-    "dev": "concurrently \"npm:dev:frontend\" \"npm:dev:backend\""
+
+    "dev:backend": "node -e \"const {spawn}=require('child_process'); const fs=require('fs'); const path=require('path'); const pyWin=path.join('backend','venv','Scripts','python.exe'); const pyNix=path.join('backend','venv','bin','python'); const py=fs.existsSync(pyWin)?pyWin:(fs.existsSync(pyNix)?pyNix:'python'); const p=spawn(py,['backend/app.py'],{stdio:'inherit'}); p.on('exit',c=>process.exit(c));\"",
+
+    "dev": "concurrently -n FRONTEND,BACKEND \"npm run dev:frontend\" \"npm run dev:backend\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@types/leaflet": "^1.9.21",
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0"
   },
   "dependencies": {
     "@react-oauth/google": "^0.12.2",
