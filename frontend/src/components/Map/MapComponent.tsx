@@ -78,7 +78,7 @@ function RecenterControl({ points }: { points: Point[] }) {
   const map = useMap();
 
   useEffect(() => {
-    const ctl = L.control({ position: "topleft" });
+    const ctl = (L as any).control({ position: "topleft" });
     ctl.onAdd = () => {
       const container = L.DomUtil.create("div", "leaflet-control leaflet-bar leaflet-control-recenter");
       const link = L.DomUtil.create("a", "", container);

@@ -13,16 +13,12 @@ export default function Login() {
   const [password, setPassword] = useState("");
 
   // Initialize Google Sign-In
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.defer = true;
-    document.body.appendChild(script);
-
-    script.onload = () => {
-      if (!window.google) return;
-
+useEffect(() => {
+  // If script already exists, don't add again
+  const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+  if (existing) {
+    // Script might already be loaded
+    if (window.google?.accounts?.id) {
       window.google.accounts.id.initialize({
         client_id:
           "1070305574453-fmq2q4sitlur2fnmp16qq1enkfg4t0n5.apps.googleusercontent.com",
@@ -31,22 +27,52 @@ export default function Login() {
 
       const target = document.getElementById("googleSignInDiv");
       if (target) {
+        target.innerHTML = ""; // important: avoid duplicate button
         window.google.accounts.id.renderButton(target, {
           theme: "outline",
           size: "large",
           width: 260,
         });
       }
-    };
+    }
+    return;
+  }
 
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
+  const script = document.createElement("script");
+  script.src = "https://accounts.google.com/gsi/client";
+  script.async = true;
+  script.defer = true;
+  document.body.appendChild(script);
+
+  script.onload = () => {
+    if (!window.google?.accounts?.id) return;
+
+    window.google.accounts.id.initialize({
+      client_id:
+        "1070305574453-fmq2q4sitlur2fnmp16qq1enkfg4t0n5.apps.googleusercontent.com",
+      callback: handleGoogleResponse,
+    });
+
+    const target = document.getElementById("googleSignInDiv");
+    if (target) {
+      target.innerHTML = ""; // important
+      window.google.accounts.id.renderButton(target, {
+        theme: "outline",
+        size: "large",
+        width: 260,
+      });
+    }
+  };
+
+  return () => {
+    // DON'T remove the script in React dev mode; it breaks re-mounts
+    // document.body.removeChild(script);
+  };
+}, []);
+
 
   function handleGoogleResponse(response: any) {
-    console.log("Google credential:", response.credential);
-    // Hand token to AuthContext (it will store in localStorage + decode)
+        // Hand token to AuthContext (it will store in localStorage + decode)
     loginWithGoogleToken(response.credential);
   }
 

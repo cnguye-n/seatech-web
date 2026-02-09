@@ -1,4 +1,5 @@
-import React, { useState, FormEvent } from "react";
+import React, { useState} from "react";
+import type { FormEvent } from "react";
 import UploadFileBox from "../UploadFileBox/UploadFileBox";
 import "./RegisterSensorForm.css";
 import { useAuth } from "../../auth/AuthContext";
