@@ -19,7 +19,15 @@ BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:5173"], supports_credentials=True)
+CORS(
+    app,
+    origins=[
+        "http://localhost:5173",
+        "https://seatech-web.vercel.app"
+    ],
+    supports_credentials=True,
+    allow_headers=["Content-Type", "Authorization"],
+)
 
 
 # Config
