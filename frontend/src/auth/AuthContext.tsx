@@ -30,18 +30,34 @@ function parseJwt(token: string) {
 }
 const API_BASE = "http://localhost:5001";
 
+// async function fetchMe(token: string) {
+//   const res = await fetch(`${API_BASE}/api/me`, {
+//     headers: { Authorization: `Bearer ${token}` },
+//   });
+//   if (!res.ok) throw new Error("Not authorized");
+//   return res.json() as Promise<{
+//     name: string;
+//     email: string;
+//     picture?: string;
+//     role: Role;
+//   }>;
+// }
 async function fetchMe(token: string) {
   const res = await fetch(`${API_BASE}/api/me`, {
-    headers: { Authorization: `Bearer ${token}` },
+    method: "GET",
+    headers: { Authorization: `Bearer ${token.trim()}` },
   });
-  if (!res.ok) throw new Error("Not authorized");
-  return res.json() as Promise<{
+
+  if (!res.ok) return null;
+  
+  return (await res.json()) as {
     name: string;
     email: string;
     picture?: string;
     role: Role;
-  }>;
+  };
 }
+
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser>(null);
@@ -54,6 +70,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (async () => {
       try {
         const me = await fetchMe(token);
+        if (!me) {
+          localStorage.removeItem(GOOGLE_TOKEN_KEY);
+          setUser(null);
+          return;
+        }
         setUser({
           name: me.name,
           email: me.email,
@@ -79,12 +100,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const me = await fetchMe(token);
 
+        if (!me) {
+          localStorage.removeItem(GOOGLE_TOKEN_KEY);
+          setUser(null);
+          return;
+        }
+
         setUser({
           name: me.name,
           email: me.email,
           picture: me.picture,
           role: me.role ?? "viewer",
         });
+
       } catch (err) {
         console.error("fetchMe failed:", err);
         localStorage.removeItem(GOOGLE_TOKEN_KEY);

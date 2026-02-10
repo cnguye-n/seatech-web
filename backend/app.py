@@ -1,4 +1,4 @@
-import os
+import os, requests
 from flask import Flask, jsonify, request, redirect, g
 from flask_cors import CORS
 from pathlib import Path
@@ -173,14 +173,40 @@ def list_turtles():
   return jsonify(turtles), 200
 
 @app.get("/api/me")
-@require_auth
+#@require_auth
 def me():
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        return jsonify({"error": "Missing or invalid Authorization header"}), 401
+    
+    token = auth.split(" ", 1)[1].strip()
+    client_id = os.getenv("GOOGLE_CLIENT_ID")
+    if not client_id:
+        return jsonify({"error": "Server misconfiguration: missing GOOGLE_CLIENT_ID"}), 500
+    
+    r = requests.get("https://oauth2.googleapis.com/tokeninfo", params={"id_token": token})
+    if r.status_code != 200:
+        return jsonify({"error": "Invalid token"}), 401
+    
+    payload = r.json()
+    
+      # prefer name, fallback to given_name, fallback to email
+    email = payload.get("email", "")
+    name = payload.get("name") or payload.get("given_name") or email
+    picture = payload.get("picture")
+
+    # if you have a get_role helper, use it; otherwise default to "viewer"
+    try:
+        role = get_role(email)
+    except NameError:
+        role = "viewer"
+
     return jsonify({
-        "email": g.user_email,
-        "name": g.user_name,
-        "picture": g.user_picture,
-        "role": get_role(g.user_email),
-    })
+        "email": email,
+        "name": name,
+        "picture": picture,
+        "role": role,
+    }), 200
     
 if __name__ == "__main__":
     print("Registered routes:", app.url_map)
