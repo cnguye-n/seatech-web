@@ -4,7 +4,7 @@ import "../styles/pages/sensors.css";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-const API_BASE = "http://localhost:5001"; // backend base URL
+const API_BASE = import.meta.env.VITE_API_URL; // backend base URL
 const GOOGLE_TOKEN_KEY = "google_credential";
 
 function authHeaders(): Record<string, string> {
