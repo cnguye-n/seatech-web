@@ -22,7 +22,7 @@ export default function App() {
   /* BACKEND */
   const API = import.meta.env.VITE_API_URL;
   const [health, setHealth] = useState<any>(null);
-  const BACKEND_URL = "http://localhost:5001";
+  const BACKEND_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const checkBackend = async () => {
