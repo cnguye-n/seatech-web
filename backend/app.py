@@ -23,7 +23,8 @@ CORS(
     app,
     origins=[
         "http://localhost:5173",
-        "https://seatech-web.vercel.app"
+        "https://seatech-web.vercel.app",
+        re.compile(r"^https://.*\.vercel\.app$"),
     ],
     supports_credentials=True,
     allow_headers=["Content-Type", "Authorization"],
