@@ -91,10 +91,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginWithGoogleToken = (token: string) => {
     // TEMP: force save so we can see if something clears it
     localStorage.setItem(GOOGLE_TOKEN_KEY, token);
-    console.log(
-      "localStorage after set:",
-      localStorage.getItem(GOOGLE_TOKEN_KEY)
-    );
+    // console.log(
+    //   "localStorage after set:",
+    //   localStorage.getItem(GOOGLE_TOKEN_KEY)
+    // );
 
     (async () => {
       try {
