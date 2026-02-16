@@ -1,4 +1,4 @@
-import os, requests
+import os, requests, re
 from flask import Flask, jsonify, request, redirect, g
 from flask_cors import CORS
 from pathlib import Path
