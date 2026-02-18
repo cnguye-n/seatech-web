@@ -11,6 +11,7 @@ import SensorPage from './pages/SensorPage';
 import ManagePage from './pages/ManagePage';
 import Settings from './pages/Settings';
 import Scroll from './components/scroll';
+import DataPage from './pages/DataPage';
 
 import Unauthorized from "./pages/Unauthorized";
 
@@ -74,6 +75,9 @@ export default function App() {
                 </RoleProtectedRoute>
               }
             />
+
+            {/* the temp datapage, will be moved when i have access to the sensor page */}
+            <Route path="/upload" element={<DataPage />} />
 
             <Route path="/login" element={<Login />} />
             <Route path="/settings" element={<Settings />} />
