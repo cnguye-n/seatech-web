@@ -64,6 +64,30 @@ class Location(db.Model):
     latitude = db.Column(db.Float, nullable=False)
     longitude = db.Column(db.Float, nullable=False)
 
+class TrackerUpload(db.Model):
+    __tablename__ = "tracker_uploads"
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(255), nullable=False)
+    ping_count = db.Column(db.Integer, nullable=False, default=0)
+    duplicate_count = db.Column(db.Integer, nullable=False, default=0)
+    uploaded_at = db.Column(db.DateTime, server_default=db.func.now())
+    uploaded_by = db.Column(db.String(255), nullable=True)
+
+class TrackerPing(db.Model):
+    __tablename__ = "tracker_pings"
+    id = db.Column(db.Integer, primary_key=True)
+    upload_id = db.Column(db.Integer, db.ForeignKey("tracker_uploads.id", ondelete="CASCADE"), nullable=False)
+    uptime_min = db.Column(db.Float, default=0)
+    batt_v = db.Column(db.Float, default=0)
+    batt_pct = db.Column(db.Integer, default=0)
+    fix_type = db.Column(db.Integer, default=-1)
+    siv = db.Column(db.Integer, default=-1)
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
+    surface_fix = db.Column(db.Integer, default=0)
+    recorded_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+
 with app.app_context():
     try:
         db.create_all()
@@ -129,6 +153,181 @@ def get_pings():
             for r in result
         ]
     return jsonify(rows), 200
+
+# upload tracker CSV pings
+@app.route("/api/pings/upload", methods=["POST"])
+def upload_pings():
+    data = request.get_json()
+    if not data or "pings" not in data:
+        return jsonify({"error": "Request body must include 'pings' array"}), 400
+
+    pings = data["pings"]
+    filename = data.get("filename", "unknown.csv")
+
+    if not isinstance(pings, list) or len(pings) == 0:
+        return jsonify({"error": "No pings to upload"}), 400
+
+    existing_fps = set()
+    try:
+        existing_rows = TrackerPing.query.with_entities(
+            TrackerPing.uptime_min, TrackerPing.latitude, TrackerPing.longitude
+        ).all()
+        for row in existing_rows:
+            fp = f"{row.uptime_min}|{row.latitude}|{row.longitude}"
+            existing_fps.add(fp)
+    except Exception:
+        pass
+
+    unique_pings = []
+    duplicate_count = 0
+
+    for p in pings:
+        lat = p.get("latitude")
+        lon = p.get("longitude")
+        uptime = p.get("uptime_min", 0)
+        fp = f"{uptime}|{lat}|{lon}"
+
+        if fp in existing_fps:
+            duplicate_count += 1
+        else:
+            unique_pings.append(p)
+            existing_fps.add(fp)
+
+    upload = TrackerUpload(
+        filename=filename,
+        ping_count=len(unique_pings),
+        duplicate_count=duplicate_count,
+    )
+    db.session.add(upload)
+    db.session.flush()
+
+    for p in unique_pings:
+        ping = TrackerPing(
+            upload_id=upload.id,
+            uptime_min=float(p.get("uptime_min", 0)),
+            batt_v=float(p.get("batt_v", 0)),
+            batt_pct=int(p.get("batt_pct", 0)),
+            fix_type=int(p.get("fix_type", -1)),
+            siv=int(p.get("siv", -1)),
+            latitude=float(p["latitude"]) if p.get("latitude") is not None else None,
+            longitude=float(p["longitude"]) if p.get("longitude") is not None else None,
+            surface_fix=int(p.get("surface_fix", 0)),
+            recorded_at=p.get("recorded_at"),
+        )
+        db.session.add(ping)
+
+    db.session.commit()
+
+    return jsonify({
+        "ok": True,
+        "upload_id": upload.id,
+        "saved": len(unique_pings),
+        "duplicates_skipped": duplicate_count,
+    }), 201
+
+
+# list history
+@app.route("/api/uploads", methods=["GET"])
+def list_uploads():
+    uploads = TrackerUpload.query.order_by(TrackerUpload.uploaded_at.desc()).limit(50).all()
+    return jsonify([
+        {
+            "id": u.id,
+            "filename": u.filename,
+            "ping_count": u.ping_count,
+            "duplicate_count": u.duplicate_count,
+            "uploaded_at": u.uploaded_at.isoformat() if u.uploaded_at else None,
+        }
+        for u in uploads
+    ]), 200
+
+
+# delete an upload and all its pings
+@app.route("/api/uploads/<int:upload_id>", methods=["DELETE"])
+def delete_upload(upload_id: int):
+    upload = TrackerUpload.query.get(upload_id)
+    if not upload:
+        return jsonify({"error": "Upload not found"}), 404
+
+    TrackerPing.query.filter_by(upload_id=upload_id).delete()
+    db.session.delete(upload)
+    db.session.commit()
+
+    return jsonify({"ok": True, "deleted_id": upload_id}), 200
+
+
+# get pings for a specific upload
+@app.route("/api/uploads/<int:upload_id>/pings", methods=["GET"])
+def get_upload_pings(upload_id: int):
+    pings = TrackerPing.query.filter_by(upload_id=upload_id)\
+        .order_by(TrackerPing.uptime_min).all()
+    return jsonify([
+        {
+            "id": p.id,
+            "uptime_min": p.uptime_min,
+            "batt_v": p.batt_v,
+            "batt_pct": p.batt_pct,
+            "fix_type": p.fix_type,
+            "siv": p.siv,
+            "latitude": p.latitude,
+            "longitude": p.longitude,
+            "surface_fix": p.surface_fix,
+            "recorded_at": p.recorded_at.isoformat() if p.recorded_at else None,
+        }
+        for p in pings
+    ]), 200
+
+
+# get all tracker pings (with optional date range filter)
+@app.route("/api/tracker-pings", methods=["GET"])
+def get_all_tracker_pings():
+    query = TrackerPing.query.filter(
+        TrackerPing.latitude.isnot(None),
+        TrackerPing.longitude.isnot(None),
+    )
+
+    start = request.args.get("start")
+    end = request.args.get("end")
+
+    if start:
+        query = query.filter(TrackerPing.recorded_at >= start)
+    if end:
+        query = query.filter(TrackerPing.recorded_at <= end + "T23:59:59")
+
+    pings = query.order_by(TrackerPing.recorded_at, TrackerPing.uptime_min).all()
+
+    return jsonify([
+        {
+            "id": p.id,
+            "upload_id": p.upload_id,
+            "uptime_min": p.uptime_min,
+            "batt_v": p.batt_v,
+            "batt_pct": p.batt_pct,
+            "fix_type": p.fix_type,
+            "siv": p.siv,
+            "latitude": p.latitude,
+            "longitude": p.longitude,
+            "surface_fix": p.surface_fix,
+            "recorded_at": p.recorded_at.isoformat() if p.recorded_at else None,
+        }
+        for p in pings
+    ]), 200
+
+
+# delete a single ping by ID
+@app.route("/api/tracker-pings/<int:ping_id>", methods=["DELETE"])
+def delete_single_ping(ping_id: int):
+    ping = TrackerPing.query.get(ping_id)
+    if not ping:
+        return jsonify({"error": "Ping not found"}), 404
+    
+    upload = TrackerUpload.query.get(ping.upload_id)
+    if upload and upload.ping_count > 0:
+        upload.ping_count -= 1
+
+    db.session.delete(ping)
+    db.session.commit()
+    return jsonify({"ok": True, "deleted_id": ping_id, "Upload_id": ping.upload_id}), 200
 
 # Route for turtle path
 @app.route("/api/turtles/<int:turtle_id>/path", methods=["GET"])

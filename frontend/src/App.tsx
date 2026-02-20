@@ -77,6 +77,7 @@ export default function App() {
             />
 
             {/* the temp datapage, will be moved when i have access to the sensor page */}
+            {/* after access to the sensor page, move <DataSection/> into the SensorPage.tsx and remove this route */}
             <Route path="/upload" element={<DataPage />} />
 
             <Route path="/login" element={<Login />} />
