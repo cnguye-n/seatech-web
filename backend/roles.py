@@ -1,15 +1,21 @@
+# roles.py
 import os
 import psycopg2
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-
 def get_role(email: str) -> str:
-    # Default: not listed => viewer
-    if not DATABASE_URL:
-        return "viewer"
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        return "public"
 
-    with psycopg2.connect(DATABASE_URL) as conn:
+    # psycopg2 expects postgresql:// (NOT SQLAlchemy's postgresql+psycopg2://)
+    if db_url.startswith("postgresql+psycopg2://"):
+        db_url = db_url.replace("postgresql+psycopg2://", "postgresql://", 1)
+
+    conn = psycopg2.connect(db_url)
+    try:
         with conn.cursor() as cur:
-            cur.execute("select role from public.user_roles where email = %s", (email,))
+            cur.execute("select role from public.users where email = %s", (email,))
             row = cur.fetchone()
-            return row[0] if row else "viewer"
+            return row[0] if row else "public"
+    finally:
+        conn.close()

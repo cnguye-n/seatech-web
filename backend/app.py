@@ -1,22 +1,24 @@
-import os, requests, re
+import os
+import re
+import requests
+from functools import wraps
+from pathlib import Path
+
+from dotenv import load_dotenv
 from flask import Flask, jsonify, request, redirect, g
 from flask_cors import CORS
-from pathlib import Path
-from sqlalchemy import text
-from dotenv import load_dotenv
-load_dotenv()
-print("DATABASE_URL =", os.getenv("DATABASE_URL"))
-
 from flask_sqlalchemy import SQLAlchemy
-from auth import require_auth
-from roles import get_role
+from sqlalchemy import text
 
+# Env / App setup
+# -----------------------
+load_dotenv()
+BASE_DIR = Path(__file__).resolve().parent
+load_dotenv(BASE_DIR / ".env")
+print("DATABASE_URL =", os.getenv("DATABASE_URL"))
 
 FRONTEND_DEV = "http://localhost:5173"
 
-# Environment + Flask app setup
-BASE_DIR = Path(__file__).resolve().parent
-load_dotenv(BASE_DIR / ".env")
 
 app = Flask(__name__)
 CORS(
@@ -30,21 +32,11 @@ CORS(
     allow_headers=["Content-Type", "Authorization"],
 )
 
-
 # Config
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev")
 
-# can use .env later, but for now hardcoding the working DB url
-# so it matches what was created in psql:
-#   user: turtle_user
-#   pass: turtle_pass
-#   db:   turtle_tracking
-#app.config["SQLALCHEMY_DATABASE_URI"] = (
-#    "postgresql+psycopg2://turtle_user:turtle_pass@localhost/turtle_tracking"
-#)
- 
-#commented the above to use supabase hosted db instead of hardcoded
 # Database
+# -----------------------
 db_url = os.getenv("DATABASE_URL")  # put this in backend/.env
 if not db_url:
     raise RuntimeError("DATABASE_URL not set. Add it to backend/.env")
@@ -70,13 +62,134 @@ with app.app_context():
         db.create_all()
     except Exception as e:
         print("db.create_all failed:", e)
+        
+# Auth + Role helpers (Bearer Google id_token)
+# -----------------------       
+def get_user_from_request():
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        return None, (jsonify({"error": "Missing or invalid Authorization header"}), 401)
+
+    token = auth.split(" ", 1)[1].strip()
+    r = requests.get("https://oauth2.googleapis.com/tokeninfo", params={"id_token": token})
+    if r.status_code != 200:
+        return None, (jsonify({"error": "Invalid token"}), 401)
+
+    payload = r.json()
+    email = payload.get("email", "")
+    name = payload.get("name") or payload.get("given_name") or email
+    picture = payload.get("picture")
+
+    # ensure user exists + fetch role
+    q = text("""
+        insert into public.users (email, name, picture, last_login)
+        values (:email, :name, :picture, now())
+        on conflict (email) do update
+        set name = excluded.name,
+            picture = excluded.picture,
+            last_login = now()
+        returning email, name, picture, role;
+    """)
+    with db.engine.begin() as conn:
+        row = conn.execute(q, {"email": email, "name": name, "picture": picture}).fetchone()
+
+    return {"email": row.email, "name": row.name, "picture": row.picture, "role": row.role}, None
 
 
-# Routes
+def require_auth(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        user, err = get_user_from_request()
+        if err:
+            return err
+        g.user = user
+        return f(*args, **kwargs)
+    return wrapper
+
+
+def require_admin(f):
+    @wraps(f)
+    @require_auth
+    def wrapper(*args, **kwargs):
+        if g.user.get("role") != "admin":
+            return jsonify({"error": "Forbidden"}), 403
+        return f(*args, **kwargs)
+    return wrapper
+
+
+# Admin Routes
+# -----------------------
+@app.get("/api/admin/users")
+@require_admin
+def admin_list_users():
+    q = text("""
+        select email, name, picture, role, last_login, created_at
+        from public.users
+        order by created_at desc;
+    """)
+    with db.engine.connect() as conn:
+        rows = conn.execute(q).fetchall()
+
+    return jsonify([
+        {
+            "email": r.email,
+            "name": r.name,
+            "picture": r.picture,
+            "role": r.role,
+            "last_login": r.last_login.isoformat() if r.last_login else None,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        }
+        for r in rows
+    ]), 200
+
+
+@app.patch("/api/admin/users/<path:email>/role")
+@require_admin
+def admin_update_user_role(email):
+    body = request.get_json() or {}
+    new_role = body.get("role")
+
+    allowed = {"public", "member", "admin"}
+    if new_role not in allowed:
+        return jsonify({"error": "Invalid role"}), 400
+
+    # safety: don’t let admin remove their own admin
+    if email == g.user["email"] and new_role != "admin":
+        return jsonify({"error": "You cannot remove your own admin role."}), 400
+
+    q = text("""
+        update public.users
+        set role = :role
+        where email = :email
+        returning email, role;
+    """)
+
+    with db.engine.begin() as conn:
+        row = conn.execute(q, {"email": email, "role": new_role}).fetchone()
+
+    if not row:
+        return jsonify({"error": "User not found (they must login at least once)."}), 404
+
+    return jsonify({"email": row.email, "role": row.role}), 200
+
+
+# Base / Utility Routes
+# -----------------------
 @app.route("/api/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok"})
 
+@app.route("/", methods=["GET"])
+def root():
+    return redirect("https://seatech-web.vercel.app", code=302)
+
+@app.get("/api/me")
+@require_auth
+def me():
+    return jsonify(g.user), 200
+
+# Locations Routes 
+# -----------------------
 @app.route("/api/locations", methods=["GET"])
 def list_locations():
     rows = Location.query.all()
@@ -102,13 +215,9 @@ def add_location():
     db.session.commit()
     return jsonify({"ok": True, "id": loc.id}), 201
 
-@app.route("/", methods=["GET"])
-def root():
-    return redirect(FRONTEND_DEV, code=302)
 
-print("Registered routes:", app.url_map)
-
-# debug route: get some pings
+# Debug/Data Routes
+# -----------------------
 @app.route("/api/pings", methods=["GET"])
 def get_pings():
     query = text("""
@@ -181,42 +290,7 @@ def list_turtles():
     ]
   return jsonify(turtles), 200
 
-@app.get("/api/me")
-#@require_auth
-def me():
-    auth = request.headers.get("Authorization", "")
-    if not auth.startswith("Bearer "):
-        return jsonify({"error": "Missing or invalid Authorization header"}), 401
-    
-    token = auth.split(" ", 1)[1].strip()
-    client_id = os.getenv("GOOGLE_CLIENT_ID")
-    if not client_id:
-        return jsonify({"error": "Server misconfiguration: missing GOOGLE_CLIENT_ID"}), 500
-    
-    r = requests.get("https://oauth2.googleapis.com/tokeninfo", params={"id_token": token})
-    if r.status_code != 200:
-        return jsonify({"error": "Invalid token"}), 401
-    
-    payload = r.json()
-    
-      # prefer name, fallback to given_name, fallback to email
-    email = payload.get("email", "")
-    name = payload.get("name") or payload.get("given_name") or email
-    picture = payload.get("picture")
 
-    # if you have a get_role helper, use it; otherwise default to "viewer"
-    try:
-        role = get_role(email)
-    except NameError:
-        role = "viewer"
-
-    return jsonify({
-        "email": email,
-        "name": name,
-        "picture": picture,
-        "role": role,
-    }), 200
-    
 if __name__ == "__main__":
     print("Registered routes:", app.url_map)
     app.run(debug=True, port=5001)
