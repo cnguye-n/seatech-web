@@ -28,13 +28,7 @@ function parseJwt(token: string) {
     return null;
   }
 }
-const API_BASE = import.meta.env.VITE_API_URL as string;
-
-if (!API_BASE) {
-  throw new Error(
-    "VITE_API_URL is not set. Add it in Vercel Environment Variables to your deployed backend URL."
-  );
-}
+const API_BASE = (import.meta.env.VITE_API_URL as string) ?? "";
 
 // async function fetchMe(token: string) {
 //   const res = await fetch(`${API_BASE}/api/me`, {
