@@ -1,4 +1,3 @@
-# roles.py
 import os
 import psycopg2
 
@@ -7,7 +6,6 @@ def get_role(email: str) -> str:
     if not db_url:
         return "public"
 
-    # psycopg2 expects postgresql:// (NOT SQLAlchemy's postgresql+psycopg2://)
     if db_url.startswith("postgresql+psycopg2://"):
         db_url = db_url.replace("postgresql+psycopg2://", "postgresql://", 1)
 
