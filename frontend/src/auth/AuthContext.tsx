@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 
-type Role = "admin" | "member" | "viewer";
+type Role = "admin" | "member" | "public";
 
 type AuthUser = {
   name: string;
@@ -28,7 +28,13 @@ function parseJwt(token: string) {
     return null;
   }
 }
-const API_BASE = import.meta.env.VITE_API_URL;
+const API_BASE = import.meta.env.VITE_API_URL as string;
+
+if (!API_BASE) {
+  throw new Error(
+    "VITE_API_URL is not set. Add it in Vercel Environment Variables to your deployed backend URL."
+  );
+}
 
 // async function fetchMe(token: string) {
 //   const res = await fetch(`${API_BASE}/api/me`, {
@@ -79,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           name: me.name,
           email: me.email,
           picture: me.picture,
-          role: me.role ?? "viewer",
+          role: me.role ?? "public",
         });
       } catch {
         localStorage.removeItem(GOOGLE_TOKEN_KEY);
@@ -110,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           name: me.name,
           email: me.email,
           picture: me.picture,
-          role: me.role ?? "viewer",
+          role: me.role ?? "public",
         });
 
       } catch (err) {
