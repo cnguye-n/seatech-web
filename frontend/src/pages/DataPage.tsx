@@ -596,7 +596,6 @@ export function UploadDataSection() {
       <div className={`csv-drop-zone ${highlight ? "highlight" : ""}`} onClick={onZoneClick}
         onDrop={onDrop} onDragOver={onDragOver} onDragLeave={onDragLeave}
         role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onZoneClick(); } }}>
-        <div className="csv-drop-zone-icon">📂</div>
         {files.length > 0 ? (
           <>
             <div className="csv-drop-zone-main">{files.length} file{files.length !== 1 ? "s" : ""} selected</div>
@@ -787,7 +786,7 @@ export function UploadDataSection() {
       {/* makes each ping expandable for more info */}
       <h3 className="upload-section-title">Stored Pings</h3>
       {mapPings.filter((p) => visibleUploadIds.has(p.upload_id)).length === 0 ? (
-        <div className="upload-status-banner info"><span>📋</span> No stored GPS pings{dateStart || dateEnd ? " in this date range" : " yet"}.</div>
+        <div className="upload-status-banner info">No stored GPS pings{dateStart || dateEnd ? " in this date range" : " yet"}.</div>
       ) : (
         <div className="upload-table-wrap">
           <div className="upload-table-scroll">
@@ -831,7 +830,7 @@ export function UploadDataSection() {
       {/* UPLOAD HISTORY — grouped by turtle, expandable, per-entry delete */}
       <h3 className="upload-section-title">Upload History</h3>
       {uploads.length === 0 ? (
-        <div className="upload-status-banner info"><span>📋</span> No uploads yet.</div>
+        <div className="upload-status-banner info">No uploads yet.</div>
       ) : (
         <div className="upload-history-grouped">
           {uploadsByTurtle.map(([filename, turtleUploads]) => {
