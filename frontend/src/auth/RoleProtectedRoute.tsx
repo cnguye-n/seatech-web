@@ -13,11 +13,17 @@ export default function RoleProtectedRoute({
   const { isAuthenticated, user } = useAuth();
   const location = useLocation();
 
+  
   if (!isAuthenticated) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  const role = user?.role ?? "viewer";
+  
+  const role: Role =
+    user?.role === "admin" || user?.role === "member"
+      ? user.role
+      : "viewer";
+
   if (!allow.includes(role)) {
     return <Navigate to="/unauthorized" replace />;
   }
