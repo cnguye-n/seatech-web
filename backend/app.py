@@ -403,12 +403,11 @@ def me():
     name = payload.get("name") or payload.get("given_name") or email
     picture = payload.get("picture")
 
-    # if you have a get_role helper, use it; otherwise default to "viewer"
     try:
         role = get_role(email)
-    except NameError:
+    except Exception:
         role = "viewer"
-
+    
     return jsonify({
         "email": email,
         "name": name,
