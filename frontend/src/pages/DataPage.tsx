@@ -619,7 +619,7 @@ export function UploadDataSection() {
       {result && !result.error && !result.alreadyProcessed && result.rows.length > 0 && (
         <>
           <div className="upload-status-banner success">
-            <span>✔</span> Parsed <strong>{result.totalRows}</strong> rows from <strong>{result.fileNames.length} file{result.fileNames.length !== 1 ? "s" : ""}</strong>
+            Parsed <strong>{result.totalRows}</strong> rows from <strong>{result.fileNames.length} file{result.fileNames.length !== 1 ? "s" : ""}</strong>
             {" "}— {result.gpsRows} with GPS, {result.noGpsRows} without
             {result.duplicateCount > 0 && <> — {result.duplicateCount} duplicate{result.duplicateCount !== 1 ? "s" : ""}</>}
           </div>
