@@ -381,8 +381,49 @@ def list_turtles():
   return jsonify(turtles), 200
 
 @app.get("/api/me")
-#@require_auth
 def me():
+    try:
+        auth = request.headers.get("Authorization", "")
+        if not auth.startswith("Bearer "):
+            return jsonify({"error": "Missing or invalid Authorization header"}), 401
+
+        token = auth.split(" ", 1)[1].strip()
+        client_id = os.getenv("GOOGLE_CLIENT_ID")
+        if not client_id:
+            return jsonify({"error": "Server misconfiguration: missing GOOGLE_CLIENT_ID"}), 500
+
+        r = requests.get("https://oauth2.googleapis.com/tokeninfo", params={"id_token": token})
+        if r.status_code != 200:
+            return jsonify({"error": "Invalid token"}), 401
+
+        payload = r.json()
+        email = payload.get("email", "")
+        name = payload.get("name") or payload.get("given_name") or email
+        picture = payload.get("picture")
+
+        # safe role lookup — ensure any error in get_role doesn't crash the endpoint
+        try:
+            role = get_role(email) or "viewer"
+        except Exception as e:
+            app.logger.exception("get_role failed")
+            role = "viewer"
+
+        # normalize legacy values
+        if role == "public":
+            role = "viewer"
+
+        return jsonify({
+            "email": email,
+            "name": name,
+            "picture": picture,
+            "role": role,
+        }), 200
+
+    except Exception as exc:
+        # Log full traceback to server logs for diagnosis
+        app.logger.exception("Unhandled error in /api/me")
+        # Return an informative (but not sensitive) error to the client while debugging
+        return jsonify({"error": "server error", "detail": str(exc)}), 500
     auth = request.headers.get("Authorization", "")
     if not auth.startswith("Bearer "):
         return jsonify({"error": "Missing or invalid Authorization header"}), 401
