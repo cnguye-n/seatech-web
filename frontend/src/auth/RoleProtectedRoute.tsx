@@ -1,7 +1,7 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 
-type Role = "admin" | "member" | "viewer";
+type Role = "admin" | "member" | "public";
 
 export default function RoleProtectedRoute({
   children,
@@ -17,7 +17,7 @@ export default function RoleProtectedRoute({
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  const role = user?.role ?? "viewer";
+  const role: Role = user?.role ?? "public";
   if (!allow.includes(role)) {
     return <Navigate to="/unauthorized" replace />;
   }
