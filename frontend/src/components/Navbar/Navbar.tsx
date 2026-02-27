@@ -36,7 +36,7 @@ export default function Navbar() {
               Home
             </NavLink>
           </li>
-          
+
           {/* dropdown */}
           <li className="nav-item dropdown">
             <span className="nav-link nav-link-static">
@@ -75,6 +75,16 @@ export default function Navbar() {
                 }
               >
                 Manage
+              </NavLink>
+            </li>
+          )}
+          {isAuthenticated && user?.role === "admin" && (
+            <li className="nav-item">
+              <NavLink
+                to="/admin/access"
+                className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
+              >
+                Admin
               </NavLink>
             </li>
           )}

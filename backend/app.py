@@ -30,8 +30,15 @@ CORS(
     ],
     supports_credentials=True,
     allow_headers=["Content-Type", "Authorization"],
+    methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
 )
 
+@app.before_request
+def handle_preflight():
+    # Let CORS preflight requests through without auth checks
+    if request.method == "OPTIONS":
+        return ("", 204)
+    
 # Config
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev")
 
