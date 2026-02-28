@@ -54,13 +54,11 @@ export default function AdminAccess() {
 
   useEffect(() => {
     loadUsers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    }, []);
 
   async function updateRole(email: string, newRole: Role) {
     setErr("");
 
-    // optimistic update
     const prev = users;
     setUsers((list) => list.map((u) => (u.email === email ? { ...u, role: newRole } : u)));
 
@@ -168,7 +166,7 @@ export default function AdminAccess() {
               <select
                 value={u.role}
                 onChange={(e) => updateRole(u.email, e.target.value as Role)}
-                disabled={u.email === user?.email} // optional: prevent changing yourself
+                disabled={u.email === user?.email}
                 style={{
                   width: "100%",
                   padding: "8px 10px",
