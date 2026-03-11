@@ -332,7 +332,7 @@
   display: inline-block;
   opacity: 0;
   transform: translateY(var(--from));
-  transition: transform .45s cubic-bezier(.22,.61,.36,1), opacity .45s ease-out;
+  transition: transform .6s cubic-bezier(.22,.61,.36,1), opacity .45s ease-out;
   will-change: transform, opacity;
 }
 
@@ -340,6 +340,15 @@
 
 @media (prefers-reduced-motion: reduce) {
   .fade-title, .fade-title.in-view { transition: none !important; opacity: 1 !important; transform: none !important; }
+}
+
+/* ================= parallax for island names ================= */
+.islands-grid .island-tile {
+  transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+}
+
+.islands-sticky {
+  padding-bottom: 2rem;
 }
 
 /* ================= parallax effect ================= */
