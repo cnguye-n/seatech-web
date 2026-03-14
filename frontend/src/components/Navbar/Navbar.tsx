@@ -54,11 +54,16 @@ export default function Navbar() {
             </ul>
           </li>
 
-          <li className="nav-item">
-            <NavLink to="/sensor" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-              Sensor
-            </NavLink>
-          </li>
+          {isAuthenticated && (user?.role === "admin" || user?.role === "member") && (
+            <li className="nav-item">
+              <NavLink
+                to="/sensor"
+                className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+              >
+                Sensor
+              </NavLink>
+            </li>
+          )}
 
           <li className="nav-item">
             <NavLink to="/about" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
