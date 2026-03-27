@@ -76,7 +76,7 @@ const mockSensors: Sensor[] = [
 const SensorPage: React.FC = () => {
   const { user } = useAuth();
 
-  if (user?.role !== "admin" && !user?.can_view_sensors) {
+  if (user?.role !== "admin" && user?.role !== "member") {
     return (
       <section className="section">
         <div className="container">
