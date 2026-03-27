@@ -13,39 +13,21 @@ type AuthUser = {
 type AuthContextValue = {
   user: AuthUser;
   isAuthenticated: boolean;
-  loginWithGoogleToken: (token: string) => void;
+  authLoading: boolean;
+  loginWithGoogleToken: (token: string) => Promise<boolean>;
   logout: () => void;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
-
 const GOOGLE_TOKEN_KEY = "google_credential";
-
-function parseJwt(token: string) {
-  try {
-    return JSON.parse(atob(token.split(".")[1]));
-  } catch {
-    return null;
-  }
-}
 const API_BASE = (import.meta.env.VITE_API_URL as string) ?? "";
 
-// async function fetchMe(token: string) {
-//   const res = await fetch(`${API_BASE}/api/me`, {
-//     headers: { Authorization: `Bearer ${token}` },
-//   });
-//   if (!res.ok) throw new Error("Not authorized");
-//   return res.json() as Promise<{
-//     name: string;
-//     email: string;
-//     picture?: string;
-//     role: Role;
-//   }>;
-// }
 async function fetchMe(token: string) {
   const res = await fetch(`${API_BASE}/api/me`, {
     method: "GET",
-    headers: { Authorization: `Bearer ${token.trim()}` },
+    headers: {
+      Authorization: `Bearer ${token.trim()}`,
+    },
   });
 
   if (!res.ok) return null;
@@ -58,69 +40,74 @@ async function fetchMe(token: string) {
   };
 }
 
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
-  // Load existing session from localStorage on first render
   useEffect(() => {
     const token = localStorage.getItem(GOOGLE_TOKEN_KEY);
-    if (!token) return;
+
+    if (!token) {
+      setAuthLoading(false);
+      return;
+    }
 
     (async () => {
       try {
         const me = await fetchMe(token);
+
         if (!me) {
           localStorage.removeItem(GOOGLE_TOKEN_KEY);
           setUser(null);
           return;
         }
+
         setUser({
           name: me.name,
           email: me.email,
           picture: me.picture,
           role: me.role ?? "public",
         });
-      } catch {
+      } catch (err) {
+        console.error("Initial auth restore failed:", err);
         localStorage.removeItem(GOOGLE_TOKEN_KEY);
         setUser(null);
+      } finally {
+        setAuthLoading(false);
       }
     })();
   }, []);
 
-  const loginWithGoogleToken = (token: string) => {
-    // TEMP: force save so we can see if something clears it
+  const loginWithGoogleToken = async (token: string): Promise<boolean> => {
+    setAuthLoading(true);
     localStorage.setItem(GOOGLE_TOKEN_KEY, token);
-    // console.log(
-    //   "localStorage after set:",
-    //   localStorage.getItem(GOOGLE_TOKEN_KEY)
-    // );
 
-    (async () => {
-      try {
-        const me = await fetchMe(token);
+    try {
+      const me = await fetchMe(token);
 
-        if (!me) {
-          localStorage.removeItem(GOOGLE_TOKEN_KEY);
-          setUser(null);
-          return;
-        }
-
-        setUser({
-          name: me.name,
-          email: me.email,
-          picture: me.picture,
-          role: me.role ?? "public",
-        });
-
-      } catch (err) {
-        console.error("fetchMe failed:", err);
+      if (!me) {
         localStorage.removeItem(GOOGLE_TOKEN_KEY);
         setUser(null);
+        return false;
       }
-    })();
-  };
 
+      setUser({
+        name: me.name,
+        email: me.email,
+        picture: me.picture,
+        role: me.role ?? "public",
+      });
+
+      return true;
+    } catch (err) {
+      console.error("fetchMe failed:", err);
+      localStorage.removeItem(GOOGLE_TOKEN_KEY);
+      setUser(null);
+      return false;
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
   const logout = () => {
     setUser(null);
@@ -130,6 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value: AuthContextValue = {
     user,
     isAuthenticated: !!user,
+    authLoading,
     loginWithGoogleToken,
     logout,
   };
