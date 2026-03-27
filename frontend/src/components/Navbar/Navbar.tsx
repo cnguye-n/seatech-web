@@ -36,7 +36,7 @@ export default function Navbar() {
               Home
             </NavLink>
           </li>
-          
+
           {/* dropdown */}
           <li className="nav-item dropdown">
             <span className="nav-link nav-link-static">
@@ -54,11 +54,16 @@ export default function Navbar() {
             </ul>
           </li>
 
-          <li className="nav-item">
-            <NavLink to="/sensor" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-              Sensor
-            </NavLink>
-          </li>
+          {isAuthenticated && (user?.role === "admin" || user?.role === "member") && (
+            <li className="nav-item">
+              <NavLink
+                to="/sensor"
+                className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
+              >
+                Sensor
+              </NavLink>
+            </li>
+          )}
 
           <li className="nav-item">
             <NavLink to="/about" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
@@ -75,6 +80,16 @@ export default function Navbar() {
                 }
               >
                 Manage
+              </NavLink>
+            </li>
+          )}
+          {isAuthenticated && user?.role === "admin" && (
+            <li className="nav-item">
+              <NavLink
+                to="/admin/access"
+                className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
+              >
+                Admin
               </NavLink>
             </li>
           )}
