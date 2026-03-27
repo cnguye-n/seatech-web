@@ -237,7 +237,7 @@ export default function About() {
         </div>
       </div>
 
-      
+    
 
       {/* stats (?) */}
       <div className="container stats-section">
@@ -254,48 +254,6 @@ export default function About() {
           </div>
         </div>
       </div>
-
-
-      {/* sponsors (lol) */}
-      <div className="partners-section">
-        <div className="container">
-          <h2 className="heading2 text-center">Our Partners</h2>
-          <p className="bodytext text-center">
-            OKAY SPONSORS 🤏
-          </p>
-          
-          <div className="card partners-card">
-            <div className="partners-grid">
-              <div className="partner-logo">
-                <span>[SHEIN]</span>
-              </div>
-              <div className="partner-logo">
-                <span>[ALIEXPRESS]</span>
-              </div>
-              <div className="partner-logo">
-                <span>[TEMU]</span>
-              </div>
-              <div className="partner-logo">
-                <span>[ALIBABA]</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-
-      {/* links/contact/etc.. */}
-      <div className="container cta-section">
-        <div className="card cta-card">
-          <h2 className="heading2 text-center">Join Us on Our Journey</h2>
-          <p className="bodytext text-center cta-text">
-          </p>
-          <div className="cta-buttons">
-            <button className="btn btn-primary">[Primary CTA]</button>
-            <button className="btn btn-secondary">[Secondary CTA]</button>
-          </div>
-        </div>
-      </div>
-    </main>
+   </main>
   );
 }

@@ -11,6 +11,7 @@ import SensorPage from './pages/SensorPage';
 import ManagePage from './pages/ManagePage';
 import Settings from './pages/Settings';
 import Scroll from './components/scroll';
+import DataPage from './pages/DataPage';
 import AdminAccess from "./pages/AdminAccess";
 
 import Unauthorized from "./pages/Unauthorized";
@@ -75,6 +76,10 @@ export default function App() {
                 </RoleProtectedRoute>
               }
             />
+
+            {/* the temp datapage, will be moved when i have access to the sensor page */}
+            {/* after access to the sensor page, move <DataSection/> into the SensorPage.tsx and remove this route */}
+            <Route path="/upload" element={<DataPage />} />
 
             <Route
               path="/admin/access"

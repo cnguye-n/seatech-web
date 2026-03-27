@@ -17,6 +17,7 @@ export default function RoleProtectedRoute({
     return <div>Loading...</div>;
   }
 
+  
   if (!isAuthenticated) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
