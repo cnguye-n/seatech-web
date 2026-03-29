@@ -63,12 +63,43 @@ export default function Homepage() {
 
         lastY = window.scrollY;
       },
-      { threshold: 0.25, rootMargin: "0px 0px -10% 0px" }
+      { threshold: 0.1, rootMargin: "0px 0px -5% 0px" }
     );
 
     titles.forEach((t) => io.observe(t));
     return () => io.disconnect();
   }, []);
+
+  // Adding fixes to current islands
+  useEffect(() => {
+  const grid = document.querySelector('.islands-grid');
+  const sticky = document.querySelector('.islands-sticky');
+  if (!grid || !sticky) return;
+  
+  const onScroll = () => {
+    const stickyRect = sticky.getBoundingClientRect();
+    const fadeZoneTop = stickyRect.bottom;
+    const fadeDistance = 80;
+
+    grid.querySelectorAll('.island-tile').forEach((tile) => {
+      const tileRect = tile.getBoundingClientRect();
+      const tileTop = tileRect.top;
+
+      if (tileTop < fadeZoneTop) {
+        const progress = Math.max(0, 1 - (fadeZoneTop - tileTop) / fadeDistance);
+        (tile as HTMLElement).style.opacity = String(progress);
+        (tile as HTMLElement).style.transform = `scale(${0.95 + progress * 0.05})`;
+      } else {
+        (tile as HTMLElement).style.opacity = '1';
+        (tile as HTMLElement).style.transform = 'scale(1)';
+      }
+    });
+  };
+
+  window.addEventListener('scroll', onScroll, {passive: true});
+  onScroll();
+  return () => window.removeEventListener('scroll', onScroll);
+}, []);
 
   return (
     <div className="homepage">
