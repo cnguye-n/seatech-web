@@ -25,8 +25,8 @@ export default function RoleProtectedRoute({
   const role: Role = user?.role ?? "public";
 
   if (!allow.includes(role)) {
-    return <Navigate to="/unauthorized" replace />;
-  }
+  return <Navigate to="/" replace />;
+}
 
   return children;
 }
