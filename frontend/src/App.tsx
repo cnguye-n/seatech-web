@@ -64,10 +64,7 @@ export default function App() {
             <Route path="/about" element={<About />} />
             <Route path="/turtles" element={<TurtlePage />} />
 
-            {/* Add this */}
-            <Route path="/unauthorized" element={<Unauthorized />} />
-
-            {/* Change this: protect sensor page by role */}
+            {/* protect sensor page by role */}
             <Route
               path="/sensor"
               element={
