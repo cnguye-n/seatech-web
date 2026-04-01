@@ -213,7 +213,7 @@ const SensorPage: React.FC = () => {
   return (
     <>
       {/* HERO */}
-      <section className="section">
+      <main className="section">
         <div className="container">
           <p className="heading1 mb-4">Sensors</p>
           <p className="bodytext">
@@ -221,7 +221,7 @@ const SensorPage: React.FC = () => {
             card to see its details and visualize its recent path.
           </p>
         </div>
-      </section>
+      </main>
 
       {/* METRICS + FILTERS + SENSOR GRID */}
       <section className="section">

@@ -3,7 +3,7 @@ import RegisterSensorForm from "../components/RegisterSensorForm/RegisterSensorF
 
 export default function ManagePage() {
   return (
-    <div className="section">
+    <main className="section">
       <div className="container">
         <p className="heading1">Manage Dashboard</p>
         <p className="bodytext">Manage your sensors and data when logged in.</p>
@@ -12,7 +12,7 @@ export default function ManagePage() {
           <RegisterSensorForm />
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 
