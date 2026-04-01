@@ -14,8 +14,6 @@ import Scroll from './components/scroll';
 import DataPage from './pages/DataPage';
 import AdminAccess from "./pages/AdminAccess";
 
-import Unauthorized from "./pages/Unauthorized";
-
 import { AuthProvider } from "./auth/AuthContext.tsx";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import RoleProtectedRoute from "./auth/RoleProtectedRoute";
