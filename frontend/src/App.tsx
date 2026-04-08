@@ -12,8 +12,7 @@ import ManagePage from './pages/ManagePage';
 import Settings from './pages/Settings';
 import Scroll from './components/scroll';
 import DataPage from './pages/DataPage';
-
-import Unauthorized from "./pages/Unauthorized";
+import AdminAccess from "./pages/AdminAccess";
 
 import { AuthProvider } from "./auth/AuthContext.tsx";
 import ProtectedRoute from "./auth/ProtectedRoute";
@@ -63,10 +62,7 @@ export default function App() {
             <Route path="/about" element={<About />} />
             <Route path="/turtles" element={<TurtlePage />} />
 
-            {/* Add this */}
-            <Route path="/unauthorized" element={<Unauthorized />} />
-
-            {/* Change this: protect sensor page by role */}
+            {/* protect sensor page by role */}
             <Route
               path="/sensor"
               element={
@@ -80,6 +76,14 @@ export default function App() {
             {/* after access to the sensor page, move <DataSection/> into the SensorPage.tsx and remove this route */}
             <Route path="/upload" element={<DataPage />} />
 
+            <Route
+              path="/admin/access"
+              element={
+                <RoleProtectedRoute allow={["admin"]}>
+                  <AdminAccess />
+                </RoleProtectedRoute>
+              }
+            />
             <Route path="/login" element={<Login />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>

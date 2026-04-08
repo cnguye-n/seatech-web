@@ -1,0 +1,129 @@
+.admin-access-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.admin-access-description {
+  margin-top: 0.5rem;
+  max-width: 700px;
+}
+
+.admin-access-signed-in {
+  margin-top: 0.4rem;
+  opacity: 0.85;
+}
+
+.admin-access-refresh-btn {
+  white-space: nowrap;
+}
+
+.admin-access-error {
+  margin-bottom: 1rem;
+  border: 1px solid rgba(220, 80, 80, 0.25);
+}
+
+.admin-access-table {
+  padding: 0;
+  overflow: hidden;
+}
+
+.admin-access-table-header,
+.admin-access-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(180px, 220px);
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem 1.25rem;
+}
+
+.admin-access-table-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-access-table-header p {
+  margin: 0;
+}
+
+.admin-access-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-access-row:last-child {
+  border-bottom: none;
+}
+
+.admin-access-state {
+  padding: 1.25rem;
+}
+
+.admin-access-user {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.admin-access-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.admin-access-avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.admin-access-user-info {
+  min-width: 0;
+}
+
+.admin-access-user-name {
+  margin: 0 0 0.2rem 0;
+  font-weight: 600;
+}
+
+.admin-access-user-email {
+  margin: 0;
+  opacity: 0.78;
+  word-break: break-word;
+}
+
+.admin-access-role {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.admin-access-select {
+  width: 100%;
+}
+
+.admin-access-self-note {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.72;
+}
+
+@media (max-width: 768px) {
+  .admin-access-table-header {
+    display: none;
+  }
+
+  .admin-access-row {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-access-refresh-btn {
+    width: 100%;
+  }
+}

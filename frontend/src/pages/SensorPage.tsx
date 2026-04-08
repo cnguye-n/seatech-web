@@ -3,6 +3,7 @@ import React, { useState, useMemo, useEffect, useRef } from "react";
 import "../styles/pages/sensors.css";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useAuth } from "../auth/AuthContext";
 
 const API_BASE = import.meta.env.VITE_API_URL; // backend base URL
 const GOOGLE_TOKEN_KEY = "google_credential";
@@ -73,6 +74,19 @@ const mockSensors: Sensor[] = [
 ];
 
 const SensorPage: React.FC = () => {
+  const { user } = useAuth();
+
+  if (user?.role !== "admin" && user?.role !== "member") {
+    return (
+      <section className="section">
+        <div className="container">
+          <p className="heading1 mb-4">Sensors</p>
+          <p className="bodytext">You do not have access to view this page.</p>
+        </div>
+      </section>
+    );
+  }
+  
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | SensorStatus>("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -199,7 +213,7 @@ const SensorPage: React.FC = () => {
   return (
     <>
       {/* HERO */}
-      <section className="section">
+      <main className="section">
         <div className="container">
           <p className="heading1 mb-4">Sensors</p>
           <p className="bodytext">
@@ -207,7 +221,7 @@ const SensorPage: React.FC = () => {
             card to see its details and visualize its recent path.
           </p>
         </div>
-      </section>
+      </main>
 
       {/* METRICS + FILTERS + SENSOR GRID */}
       <section className="section">

@@ -1,17 +1,19 @@
 import os
 import psycopg2
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-
 def get_role(email: str) -> str:
-    if not DATABASE_URL or not email:
-        return "viewer"
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        return "public"
 
+    if db_url.startswith("postgresql+psycopg2://"):
+        db_url = db_url.replace("postgresql+psycopg2://", "postgresql://", 1)
+
+    conn = psycopg2.connect(db_url)
     try:
-        with psycopg2.connect(DATABASE_URL) as conn:
-            with conn.cursor() as cur:
-                cur.execute("select role from public.users where email = %s", (email,))
-                row = cur.fetchone()
-                return row[0] if row and row[0] else "viewer"
-    except psycopg2.Error:
-        return "viewer"
+        with conn.cursor() as cur:
+            cur.execute("select role from public.users where email = %s", (email,))
+            row = cur.fetchone()
+            return row[0] if row else "public"
+    finally:
+        conn.close()
