@@ -1,7 +1,21 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import './About.css';
 
-export default function About() {  
+const API_BASE = import.meta.env.VITE_API_URL;
+
+export default function About() {
+  const [uniqueSensorCount, setUniqueSensorCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/uploads`)
+      .then((r) => r.ok ? r.json() : [])
+      .then((data: { filename: string }[]) => {
+        const unique = new Set(data.map((u) => u.filename)).size;
+        setUniqueSensorCount(unique);
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <main className="section">
       {/* hero */}
@@ -244,12 +258,12 @@ export default function About() {
         <div className="card stats-card">
           <div className="stats-grid">
             <div className="stat-item">
-              <div className="stat-number">[4]</div>
-              <p className="stat-label">[Sensors]</p>
+              <div className="stat-number">{uniqueSensorCount !== null ? uniqueSensorCount : "—"}</div>
+              <p className="stat-label">Sensors Deployed</p>
             </div>
             <div className="stat-item">
-              <div className="stat-number">[0]</div>
-              <p className="stat-label">[Turtle]</p>
+              <div className="stat-number">{uniqueSensorCount !== null ? uniqueSensorCount : "—"}</div>
+              <p className="stat-label">Turtles Tracked</p>
             </div>
           </div>
         </div>
