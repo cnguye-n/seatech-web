@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import "../styles/pages/sensors.css";
 import "../styles/pages/DataPage.css";
 import {
@@ -92,6 +92,15 @@ function FitBounds({ coords }: { coords: [number, number][] }) {
   return null;
 }
 
+function ZoomToSensor({ coords, trigger }: { coords: [number, number][]; trigger: number }) {
+  const map = useMap();
+  useEffect(() => {
+    if (trigger === 0 || coords.length === 0) return;
+    map.fitBounds(L.latLngBounds(coords), { padding: [60, 60], animate: true });
+  }, [trigger]);
+  return null;
+}
+
 // ─── main ─────────────────────────────────────────────────────────────────────
 
 const SensorPage: React.FC = () => {
@@ -100,6 +109,7 @@ const SensorPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [openSensors, setOpenSensors] = useState<Set<string>>(new Set());
+  const [zoomTarget, setZoomTarget] = useState<{ name: string; trigger: number } | null>(null);
   const [visibleSensors, setVisibleSensors] = useState<Set<string>>(new Set());
 
   // deletion state
@@ -340,12 +350,12 @@ const SensorPage: React.FC = () => {
                                 meta.sex && meta.sex !== "Unknown" && ["Sex", meta.sex],
                                 meta.island_origin && meta.island_origin !== "Unknown" && ["Island", meta.island_origin],
                                 meta.notes && ["Notes", meta.notes],
-                              ].filter(Boolean).map(([label, value]) => (
+                              ].filter(Boolean).map((item) => { const [label, value] = item as [string, string]; return (
                                 <div key={label as string} style={{ display: "flex", gap: "0.5rem", alignItems: "baseline", fontSize: "0.83rem", marginBottom: "0.2rem" }}>
                                   <span style={{ color: "#8aa8ab", fontWeight: 600, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", minWidth: 52, flexShrink: 0 }}>{label}</span>
                                   <span style={{ color: "#2d4a4d", fontWeight: 500 }}>{value}</span>
                                 </div>
-                              ))}
+                              ); })}
                             </div>
                           )}
 
@@ -378,9 +388,53 @@ const SensorPage: React.FC = () => {
                             <p className="bodytext" style={{ color: "#999" }}>No ping data yet</p>
                           )}
 
-                          <button className={`sensor-map-toggle${isVisible ? " active" : ""}`} onClick={(e) => { e.stopPropagation(); toggleVisible(name); }}>
-                            {isVisible ? "Visible on map" : "Show on map"}
-                          </button>
+                          <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); toggleVisible(name); }}
+                              style={{
+                                padding: "0.35rem 0.85rem",
+                                fontSize: "0.78rem",
+                                fontWeight: 600,
+                                borderRadius: "8px",
+                                border: `1.5px solid ${isVisible ? color.stroke : "#ccc"}`,
+                                background: isVisible ? color.stroke : "transparent",
+                                color: isVisible ? "#fff" : "#999",
+                                cursor: "pointer",
+                                transition: "all 0.18s ease",
+                              }}
+                            >
+                              {isVisible ? "Visible" : "Hidden"}
+                            </button>
+                            {isVisible && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const sensorPings = pings.filter((p) => {
+                                    const u = uploads.find((u) => u.id === p.upload_id);
+                                    return u?.filename === name && p.latitude != null && p.longitude != null;
+                                  });
+                                  if (sensorPings.length > 0) {
+                                    setZoomTarget({ name, trigger: Date.now() });
+                                  }
+                                }}
+                                style={{
+                                  padding: "0.35rem 0.85rem",
+                                  fontSize: "0.78rem",
+                                  fontWeight: 600,
+                                  borderRadius: "8px",
+                                  border: `1.5px solid ${color.stroke}`,
+                                  background: "transparent",
+                                  color: color.stroke,
+                                  cursor: "pointer",
+                                  transition: "all 0.18s ease",
+                                }}
+                                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = color.fill; }}
+                                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                              >
+                                Zoom to path
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -408,6 +462,15 @@ const SensorPage: React.FC = () => {
                 ) : (
                   <MapContainer center={mapCoords[0]} zoom={8} maxZoom={18} scrollWheelZoom className="leaflet-map" style={{ width: "100%", height: "100%" }}>
                     <FitBounds coords={mapCoords} />
+                    {zoomTarget && (() => {
+                      const sensorCoords: [number, number][] = pings
+                        .filter((p) => {
+                          const u = uploads.find((u) => u.id === p.upload_id);
+                          return u?.filename === zoomTarget.name && p.latitude != null && p.longitude != null;
+                        })
+                        .map((p) => [p.latitude!, p.longitude!]);
+                      return <ZoomToSensor coords={sensorCoords} trigger={zoomTarget.trigger} />;
+                    })()}
                     <LayersControl position="topright">
                       <BaseLayer checked name="Esri Ocean Basemap">
                         <TileLayer attribution="Tiles &copy; Esri" url="https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}" />
