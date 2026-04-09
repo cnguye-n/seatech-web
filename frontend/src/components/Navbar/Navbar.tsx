@@ -7,7 +7,7 @@ export default function Navbar() {
   const { user } = useAuth();
   const location = useLocation();
   const [islandsOpen, setIslandsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLLIElement>(null);
 
   const isAdmin = user?.role === "admin";
   const canSeeSensor = user?.role === "admin" || user?.role === "member";
