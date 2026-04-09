@@ -72,6 +72,12 @@ class TrackerUpload(db.Model):
     duplicate_count = db.Column(db.Integer, nullable=False, default=0)
     uploaded_at = db.Column(db.DateTime, server_default=db.func.now())
     uploaded_by = db.Column(db.String(255), nullable=True)
+    # turtle metadata supplied at upload time
+    turtle_name = db.Column(db.String(255), nullable=True)
+    species = db.Column(db.String(100), nullable=True)
+    sex = db.Column(db.String(50), nullable=True)
+    island_origin = db.Column(db.String(100), nullable=True)
+    notes = db.Column(db.Text, nullable=True)
 
 class TrackerPing(db.Model):
     __tablename__ = "tracker_pings"
@@ -87,6 +93,9 @@ class TrackerPing(db.Model):
     surface_fix = db.Column(db.Integer, default=0)
     recorded_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
+    altitude_m = db.Column(db.Float, nullable=True)
+    h_acc_m = db.Column(db.Float, nullable=True)
+    speed_mps = db.Column(db.Float, nullable=True)
 
 with app.app_context():
     try:
@@ -280,6 +289,11 @@ def upload_pings():
 
     pings = data["pings"]
     filename = data.get("filename", "unknown.csv")
+    turtle_name = data.get("turtle_name") or None
+    species = data.get("species") or None
+    sex = data.get("sex") or None
+    island_origin = data.get("island_origin") or None
+    notes = data.get("notes") or None
 
     if not isinstance(pings, list) or len(pings) == 0:
         return jsonify({"error": "No pings to upload"}), 400
@@ -314,6 +328,11 @@ def upload_pings():
         filename=filename,
         ping_count=len(unique_pings),
         duplicate_count=duplicate_count,
+        turtle_name=turtle_name,
+        species=species,
+        sex=sex,
+        island_origin=island_origin,
+        notes=notes,
     )
     db.session.add(upload)
     db.session.flush()
@@ -330,6 +349,9 @@ def upload_pings():
             longitude=float(p["longitude"]) if p.get("longitude") is not None else None,
             surface_fix=int(p.get("surface_fix", 0)),
             recorded_at=p.get("recorded_at"),
+            altitude_m=float(p["altitude_m"]) if p.get("altitude_m") is not None else None,
+            h_acc_m=float(p["h_acc_m"]) if p.get("h_acc_m") is not None else None,
+            speed_mps=float(p["speed_mps"]) if p.get("speed_mps") is not None else None,
         )
         db.session.add(ping)
 
@@ -354,6 +376,11 @@ def list_uploads():
             "ping_count": u.ping_count,
             "duplicate_count": u.duplicate_count,
             "uploaded_at": u.uploaded_at.isoformat() if u.uploaded_at else None,
+            "turtle_name": u.turtle_name,
+            "species": u.species,
+            "sex": u.sex,
+            "island_origin": u.island_origin,
+            "notes": u.notes,
         }
         for u in uploads
     ]), 200
@@ -390,6 +417,9 @@ def get_upload_pings(upload_id: int):
             "longitude": p.longitude,
             "surface_fix": p.surface_fix,
             "recorded_at": p.recorded_at.isoformat() if p.recorded_at else None,
+            "altitude_m": p.altitude_m,
+            "h_acc_m": p.h_acc_m,
+            "speed_mps": p.speed_mps,
         }
         for p in pings
     ]), 200
@@ -499,4 +529,3 @@ def list_turtles():
 if __name__ == "__main__":
     print("Registered routes:", app.url_map)
     app.run(debug=True, port=5001)
-    

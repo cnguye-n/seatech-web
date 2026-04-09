@@ -8,6 +8,7 @@ html {
   display: grid;
   gap: var(--space-4);
   grid-template-columns: repeat(3, minmax(240px, 1fr));
+  align-items: start;
 }
 
 @media (max-width: 1024px) {
@@ -79,7 +80,7 @@ html {
 
 /* open state */
 .sensor-card-body-wrapper.open {
-  max-height: 260px;
+  max-height: 600px;
   opacity: 1;
   transform: translateY(0);
 }

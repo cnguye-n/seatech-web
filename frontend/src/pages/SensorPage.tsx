@@ -1,584 +1,700 @@
-// src/pages/SensorPage.tsx
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import "../styles/pages/sensors.css";
+import "../styles/pages/DataPage.css";
+import {
+  MapContainer, TileLayer, CircleMarker, Polyline,
+  Popup, Tooltip, LayersControl, useMap,
+} from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { useAuth } from "../auth/AuthContext";
 
-const API_BASE = import.meta.env.VITE_API_URL; // backend base URL
-const GOOGLE_TOKEN_KEY = "google_credential";
+const API_BASE = import.meta.env.VITE_API_URL;
+const { BaseLayer, Overlay } = LayersControl;
 
-function authHeaders(): Record<string, string> {
-  const token = localStorage.getItem(GOOGLE_TOKEN_KEY);
-  const headers: Record<string, string> = {};
-  if (token) headers.Authorization = `Bearer ${token}`;
-  return headers;
-  }
+// ─── types ────────────────────────────────────────────────────────────────────
 
-type SensorStatus = "online" | "offline" | "warning";
-
-interface Sensor {
-  id: string;
-  name: string;
-  type: string;
-  location: string;
-  status: SensorStatus;
-  lastReading: string;
-  lastUpdated: string;
-  lat: number;
-  lng: number;
-}
-
-// History + predicted tracks for each turtle.
-// We'll fill this from the backend instead of using hard-coded mockTracks.
-type Track = {
-  history: [number, number][];
-  predicted: [number, number][];
+type UploadRecord = {
+  id: number;
+  filename: string;
+  ping_count: number;
+  duplicate_count: number;
+  uploaded_at: string | null;
+  turtle_name: string | null;
+  species: string | null;
+  sex: string | null;
+  island_origin: string | null;
+  notes: string | null;
 };
 
-// Initial mock sensors so the page doesn’t look empty if backend is down
-const mockSensors: Sensor[] = [
-  {
-    id: "SENSOR-001",
-    name: "TURTLE-1",
-    type: "Temperature",
-    location: "Isla Menor Cayo Roncador",
-    status: "online",
-    lastReading: "22.4 °C",
-    lastUpdated: "2 min ago",
-    lat: 13.5833,
-    lng: -81.2,
-  },
-  {
-    id: "SENSOR-002",
-    name: "TURTLE-2",
-    type: "Motion",
-    location: "Isla Providencia y Santa Catalina",
-    status: "warning",
-    lastReading: "12.3",
-    lastUpdated: "5 min ago",
-    lat: 13.35,
-    lng: -81.37,
-  },
-  {
-    id: "SENSOR-003",
-    name: "TURTLE-3",
-    type: "Pressure",
-    location: "Isla Menor Cayo Serrana",
-    status: "offline",
-    lastReading: "-",
-    lastUpdated: "1 hr ago",
-    lat: 14.2833,
-    lng: -80.2833,
-  },
+type StoredPing = {
+  id: number;
+  upload_id: number;
+  uptime_min: number;
+  batt_v: number;
+  batt_pct: number;
+  fix_type: number;
+  siv: number;
+  latitude: number | null;
+  longitude: number | null;
+  surface_fix: number;
+  recorded_at: string | null;
+  altitude_m: number | null;
+  h_acc_m: number | null;
+  speed_mps: number | null;
+};
+
+// ─── helpers ──────────────────────────────────────────────────────────────────
+
+const TURTLE_COLORS = [
+  { stroke: "#006d77", fill: "#83c5be" },
+  { stroke: "#e63946", fill: "#f4a3ab" },
+  { stroke: "#457b9d", fill: "#a8dadc" },
+  { stroke: "#e9c46a", fill: "#f4e4a6" },
+  { stroke: "#2a9d8f", fill: "#6ec6b8" },
+  { stroke: "#7b2cbf", fill: "#c49bde" },
+  { stroke: "#f77f00", fill: "#f9b56a" },
+  { stroke: "#264653", fill: "#6b8f9e" },
 ];
 
-const SensorPage: React.FC = () => {
-  const { user } = useAuth();
+function getColor(i: number) { return TURTLE_COLORS[i % TURTLE_COLORS.length]; }
 
-  if (user?.role !== "admin" && user?.role !== "member") {
-    return (
-      <section className="section">
-        <div className="container">
-          <p className="heading1 mb-4">Sensors</p>
-          <p className="bodytext">You do not have access to view this page.</p>
-        </div>
-      </section>
-    );
+function battColor(pct: number) {
+  if (pct >= 60) return "#2ecc71";
+  if (pct >= 30) return "#f39c12";
+  return "#e74c3c";
+}
+
+function formatDate(iso: string | null) {
+  if (!iso) return "—";
+  try { return new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" }); } catch { return iso; }
+}
+
+function formatShortTime(iso: string | null) {
+  if (!iso) return "—";
+  try { return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" }); } catch { return iso; }
+}
+
+function buildColorMap(uploads: UploadRecord[]): Map<string, number> {
+  const map = new Map<string, number>();
+  let i = 0;
+  for (const u of [...uploads].sort((a, b) => a.id - b.id)) {
+    if (!map.has(u.filename)) { map.set(u.filename, i); i++; }
   }
-  
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | SensorStatus>("all");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [activeId, setActiveId] = useState<string | null>(null);
+  return map;
+}
 
-  // NEW: sensors state (starts with mock, then replaced by backend data)
-  const [sensors, setSensors] = useState<Sensor[]>(mockSensors);
-
-  // NEW: track for the currently active sensor (history from backend)
-  const [activeTrack, setActiveTrack] = useState<Track | null>(null);
-
-  // --- FETCH TURTLES FROM BACKEND ON MOUNT ---
+function FitBounds({ coords }: { coords: [number, number][] }) {
+  const map = useMap();
   useEffect(() => {
-    const fetchTurtles = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/api/turtles`, {
-          headers: authHeaders(),
-      });
-        if (!res.ok) {
-          console.error("Failed to fetch turtles", res.statusText);
-          return;
-        }
-        const data = await res.json(); // [{ id, name, species, tag_id }, ...]
+    if (coords.length === 0) return;
+    map.fitBounds(L.latLngBounds(coords), { padding: [50, 50], animate: true });
+  }, [map, coords]);
+  return null;
+}
 
-        const mapped: Sensor[] = data.map((t: any) => ({
-          id: String(t.id), // numeric DB id as string
-          name: t.name ?? `Turtle ${t.id}`,
-          type: t.species ?? "Turtle tracker",
-          location: "Unknown location", // can be updated when you store this in DB
-          status: "online", // placeholder for now
-          lastReading: "-",
-          lastUpdated: "N/A",
-          lat: 0,
-          lng: 0,
-        }));
+function ZoomToSensor({ coords, trigger }: { coords: [number, number][]; trigger: number }) {
+  const map = useMap();
+  useEffect(() => {
+    if (trigger === 0 || coords.length === 0) return;
+    map.fitBounds(L.latLngBounds(coords), { padding: [60, 60], animate: true });
+  }, [trigger]);
+  return null;
+}
 
-        setSensors(mapped);
-      } catch (err) {
-        console.error("Error fetching turtles", err);
+// ─── main ─────────────────────────────────────────────────────────────────────
+
+const SensorPage: React.FC = () => {
+  const [uploads, setUploads] = useState<UploadRecord[]>([]);
+  const [pings, setPings] = useState<StoredPing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [openSensors, setOpenSensors] = useState<Set<string>>(new Set());
+  const [zoomTarget, setZoomTarget] = useState<{ name: string; trigger: number } | null>(null);
+  const [visibleSensors, setVisibleSensors] = useState<Set<string>>(new Set());
+
+  // deletion state
+  const [deleting, setDeleting] = useState<number | null>(null);
+  const [deletingPing, setDeletingPing] = useState<number | null>(null);
+  const [expandedTurtle, setExpandedTurtle] = useState<string | null>(null);
+  const [expandedUploadId, setExpandedUploadId] = useState<number | null>(null);
+  const [uploadPingsCache, setUploadPingsCache] = useState<Map<number, StoredPing[]>>(new Map());
+
+  const sensorNames = useMemo(() => Array.from(new Set(uploads.map((u) => u.filename))), [uploads]);
+  const colorMap = useMemo(() => buildColorMap(uploads), [uploads]);
+
+  const batterySummary = useMemo(() => {
+    const map = new Map<string, StoredPing>();
+    for (const p of pings) {
+      const upload = uploads.find((u) => u.id === p.upload_id);
+      if (!upload) continue;
+      const existing = map.get(upload.filename);
+      if (!existing || p.uptime_min > existing.uptime_min) {
+        map.set(upload.filename, p);
       }
-    };
+    }
+    return map;
+  }, [pings, uploads]);
 
-    fetchTurtles();
-  }, []);
+  const pingCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const u of uploads) map.set(u.filename, (map.get(u.filename) ?? 0) + u.ping_count);
+    return map;
+  }, [uploads]);
 
-  // --- SENSOR TYPES / FILTERS USE REAL SENSORS NOW ---
-  const sensorTypes = useMemo(
-    () => ["all", ...Array.from(new Set(sensors.map((s) => s.type)))],
-    [sensors]
-  );
+  const metaByName = useMemo(() => {
+    const map = new Map<string, UploadRecord>();
+    for (const u of [...uploads].sort((a, b) => b.id - a.id)) {
+      const existing = map.get(u.filename);
+      const hasMeta = u.turtle_name || u.species || u.sex || u.island_origin || u.notes;
+      if (!existing || hasMeta) map.set(u.filename, u);
+    }
+    return map;
+  }, [uploads]);
+
+  const uploadsByTurtle = useMemo(() => {
+    const map = new Map<string, UploadRecord[]>();
+    for (const u of uploads) {
+      if (!map.has(u.filename)) map.set(u.filename, []);
+      map.get(u.filename)!.push(u);
+    }
+    return Array.from(map.entries());
+  }, [uploads]);
+
+  const mapPings = useMemo(() => pings.filter((p) => {
+    if (p.latitude == null || p.longitude == null) return false;
+    const upload = uploads.find((u) => u.id === p.upload_id);
+    return upload && visibleSensors.has(upload.filename);
+  }), [pings, uploads, visibleSensors]);
 
   const filteredSensors = useMemo(() => {
-    const term = search.toLowerCase();
+    const t = search.toLowerCase();
+    return sensorNames.filter((n) => n.toLowerCase().includes(t));
+  }, [sensorNames, search]);
 
-    return sensors.filter((sensor) => {
-      const matchesSearch =
-        sensor.name.toLowerCase().includes(term) ||
-        sensor.id.toLowerCase().includes(term) ||
-        sensor.location.toLowerCase().includes(term);
+  const fetchUploads = useCallback(async () => {
+    try {
+      const r = await fetch(`${API_BASE}/api/uploads`);
+      if (r.ok) {
+        const data: UploadRecord[] = await r.json();
+        setUploads(data);
+        setVisibleSensors(new Set(data.map((u) => u.filename)));
+      }
+    } catch {}
+  }, []);
 
-      const matchesStatus =
-        statusFilter === "all" ? true : sensor.status === statusFilter;
+  const fetchPings = useCallback(async () => {
+    try {
+      const r = await fetch(`${API_BASE}/api/tracker-pings`);
+      if (r.ok) setPings(await r.json());
+    } catch {}
+  }, []);
 
-      const matchesType =
-        typeFilter === "all" ? true : sensor.type === typeFilter;
-
-      return matchesSearch && matchesStatus && matchesType;
-    });
-  }, [sensors, search, statusFilter, typeFilter]);
-
-  const total = filteredSensors.length;
-  const online = filteredSensors.filter((s) => s.status === "online").length;
-  const offline = filteredSensors.filter((s) => s.status === "offline").length;
-  const warning = filteredSensors.filter((s) => s.status === "warning").length;
-
-  const activeIndex = filteredSensors.findIndex((s) => s.id === activeId);
-  const activeSensor =
-    filteredSensors.find((s) => s.id === activeId) ?? null;
-
-  const gridClassName = [
-    "sensor-grid",
-    activeIndex === 0 ? "active-index-0" : "",
-    activeIndex === 1 ? "active-index-1" : "",
-    activeIndex === 2 ? "active-index-2" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  // --- FETCH TRACK FROM BACKEND WHEN ACTIVE SENSOR CHANGES ---
   useEffect(() => {
-    const fetchTrack = async () => {
-      if (!activeSensor) {
-        setActiveTrack(null);
-        return;
-      }
-      try {
-        const res = await fetch(`${API_BASE}/api/turtles/${activeSensor.id}/path`, {
-          headers: authHeaders(),
-      });
-        if (!res.ok) {
-          console.error("Failed to fetch turtle path", res.statusText);
-          setActiveTrack(null);
-          return;
-        }
-        const data: { latitude: number; longitude: number; ping_time: string }[] =
-          await res.json();
-
-        const history: [number, number][] = data.map((p) => [
-          p.latitude,
-          p.longitude,
-        ]);
-
-        // No real prediction yet → keep predicted empty for now
-        setActiveTrack({ history, predicted: [] });
-      } catch (err) {
-        console.error("Error fetching turtle path", err);
-        setActiveTrack(null);
-      }
+    const load = async () => {
+      setLoading(true);
+      await Promise.all([fetchUploads(), fetchPings()]);
+      setLoading(false);
     };
+    load();
+  }, [fetchUploads, fetchPings]);
 
-    fetchTrack();
-  }, [activeSensor]);
+  const toggleVisible = (name: string) => {
+    setVisibleSensors((prev) => {
+      const next = new Set(prev);
+      next.has(name) ? next.delete(name) : next.add(name);
+      return next;
+    });
+  };
+
+  const fetchUploadPings = async (uploadId: number) => {
+    try {
+      const r = await fetch(`${API_BASE}/api/uploads/${uploadId}/pings`);
+      if (r.ok) {
+        const data = await r.json();
+        setUploadPingsCache((prev) => new Map(prev).set(uploadId, data));
+      }
+    } catch {}
+  };
+
+  const toggleExpandUpload = (uploadId: number) => {
+    if (expandedUploadId === uploadId) {
+      setExpandedUploadId(null);
+    } else {
+      setExpandedUploadId(uploadId);
+      if (!uploadPingsCache.has(uploadId)) fetchUploadPings(uploadId);
+    }
+  };
+
+  const handleDeleteUpload = async (uploadId: number) => {
+    if (!window.confirm("Delete this entire upload session and all its pings?")) return;
+    setDeleting(uploadId);
+    try {
+      const r = await fetch(`${API_BASE}/api/uploads/${uploadId}`, { method: "DELETE" });
+      if (r.ok) { await fetchUploads(); await fetchPings(); setExpandedUploadId(null); }
+    } catch {} finally { setDeleting(null); }
+  };
+
+  const handleDeletePing = async (pingId: number) => {
+    if (!window.confirm("Delete this single ping?")) return;
+    setDeletingPing(pingId);
+    try {
+      const r = await fetch(`${API_BASE}/api/tracker-pings/${pingId}`, { method: "DELETE" });
+      if (r.ok) {
+        const data = await r.json();
+        if (data.upload_id) fetchUploadPings(data.upload_id);
+        await fetchUploads();
+        await fetchPings();
+      }
+    } catch {} finally { setDeletingPing(null); }
+  };
+
+  const mapGroups = useMemo(() => {
+    const groups = new Map<string, StoredPing[]>();
+    for (const p of mapPings) {
+      const upload = uploads.find((u) => u.id === p.upload_id);
+      if (!upload) continue;
+      if (!groups.has(upload.filename)) groups.set(upload.filename, []);
+      groups.get(upload.filename)!.push(p);
+    }
+    return Array.from(groups.entries()).map(([name, pingList]) => ({
+      name, pings: pingList, color: getColor(colorMap.get(name) ?? 0),
+    }));
+  }, [mapPings, uploads, colorMap]);
+
+  const mapCoords: [number, number][] = mapPings
+    .filter((p) => p.latitude != null && p.longitude != null)
+    .map((p) => [p.latitude!, p.longitude!]);
 
   return (
     <>
       {/* HERO */}
-      <main className="section">
+      <main style={{ paddingTop: "2rem", paddingBottom: "1rem" }}>
         <div className="container">
-          <p className="heading1 mb-4">Sensors</p>
-          <p className="bodytext">
-            Centralized view of all deployed SEAtech sensors. Click a sensor
-            card to see its details and visualize its recent path.
+          <p className="heading1" style={{ marginBottom: "0.5rem" }}>Sensor Data</p>
+          <p className="bodytext" style={{ color: "#5a8a8f", marginBottom: 0 }}>
+            Real-time GPS tracking data from deployed RAK sensors. Click a sensor card to expand its details, or use the map to explore migration paths.
           </p>
         </div>
       </main>
 
-      {/* METRICS + FILTERS + SENSOR GRID */}
-      <section className="section">
-        <div className="container">
-          {/* Summary cards */}
-          <div className="summary-grid mb-6">
-            <div className="card">
-              <p className="heading3">Total Sensors</p>
-              <p className="heading2">{total}</p>
-            </div>
-            <div className="card">
-              <p className="heading3">Online</p>
-              <p className="heading2">{online}</p>
-            </div>
-            <div className="card">
-              <p className="heading3">Offline</p>
-              <p className="heading2">{offline}</p>
-            </div>
-            <div className="card">
-              <p className="heading3">Warnings</p>
-              <p className="heading2">{warning}</p>
+      {loading ? (
+        <section className="section">
+          <div className="container"><p className="bodytext">Loading sensor data…</p></div>
+        </section>
+      ) : sensorNames.length === 0 ? (
+        <section className="section">
+          <div className="container">
+            <div className="upload-status-banner info">
+              No sensor data uploaded yet. Go to <strong>Manage</strong> to upload tracker CSV files.
             </div>
           </div>
-
-          {/* Filters */}
-          <div className="filters-row mb-6">
-            <div className="filters-inputs">
-              <input
-                type="text"
-                placeholder="Search by name, ID, or location"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="filters-field"
-              />
-              <select
-                value={statusFilter}
-                onChange={(e) =>
-                  setStatusFilter(e.target.value as "all" | SensorStatus)
-                }
-                className="filters-field"
-              >
-                <option value="all">All statuses</option>
-                <option value="online">Online</option>
-                <option value="offline">Offline</option>
-                <option value="warning">Warning</option>
-              </select>
-
-              <select
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-                className="filters-field"
-              >
-                {sensorTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {type === "all" ? "All types" : type}
-                  </option>
+        </section>
+      ) : (
+        <>
+          {/* SUMMARY CARDS */}
+          <section style={{ paddingTop: "1.5rem", paddingBottom: "1rem" }}>
+            <div className="container">
+              <div className="summary-grid mb-6">
+                {[
+                  { label: "Total Sensors", value: sensorNames.length },
+                  { label: "Total Pings", value: pings.length },
+                  { label: "GPS Fixes", value: pings.filter((p) => p.latitude != null).length },
+                  { label: "Upload Sessions", value: uploads.length },
+                ].map(({ label, value }) => (
+                  <div key={label} style={{ background: "#fff", border: "1px solid rgba(0,109,119,0.15)", borderRadius: 14, padding: "1.25rem 1.5rem", display: "flex", flexDirection: "column", gap: "0.25rem", transition: "box-shadow 0.2s, transform 0.2s" }}>
+                    <span style={{ fontSize: "0.72rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "#5a8a8f" }}>{label}</span>
+                    <span style={{ fontSize: "2rem", fontWeight: 700, color: "#006d77", lineHeight: 1 }}>{value}</span>
+                  </div>
                 ))}
-              </select>
+              </div>
+
+              <div className="filters-row mb-6" style={{ justifyContent: "flex-start" }}>
+                <input type="text" placeholder="Search sensors…" value={search} onChange={(e) => setSearch(e.target.value)} className="filters-field" style={{ maxWidth: 320 }} />
+              </div>
+
+              {/* SENSOR CARDS */}
+              <div className="sensor-grid">
+                {filteredSensors.map((name) => {
+                  const cidx = colorMap.get(name) ?? 0;
+                  const color = getColor(cidx);
+                  const batt = batterySummary.get(name);
+                  const pingCount = pingCounts.get(name) ?? 0;
+                  const isActive = openSensors.has(name);
+                  const isVisible = visibleSensors.has(name);
+                  const meta = metaByName.get(name);
+                  const displayName = meta?.turtle_name || name;
+
+                  return (
+                    <div
+                      key={name}
+                      className={`card sensor-card ${isActive ? "is-open" : ""}`}
+                      onClick={() => setOpenSensors((prev) => { const next = new Set(prev); next.has(name) ? next.delete(name) : next.add(name); return next; })}
+                      style={{ borderColor: isVisible ? color.stroke : "#ccc" }}
+                    >
+                      <div className="sensor-card-header">
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p className="sensor-title" style={{ color: color.stroke }}>{displayName}</p>
+                          <p className="sensor-id">{name !== displayName ? `${name} · ` : ""}{pingCount} ping{pingCount !== 1 ? "s" : ""}</p>
+                        </div>
+                        <span style={{ fontSize: "0.7rem", color: color.stroke, transition: "transform 0.3s ease", transform: isActive ? "rotate(180deg)" : "rotate(0deg)", display: "inline-block", flexShrink: 0, marginTop: 2 }}>▼</span>
+                      </div>
+
+                      <div className={`sensor-card-body-wrapper ${isActive ? "open" : ""}`}>
+                        <div className="sensor-card-body">
+                          {/* turtle metadata */}
+                          {meta && (meta.turtle_name || meta.species || meta.sex || meta.island_origin || meta.notes) && (
+                            <div style={{ marginBottom: "0.6rem", paddingBottom: "0.6rem", borderBottom: "1px dashed rgba(131,197,190,0.4)" }}>
+                              {[
+                                meta.turtle_name && ["Name", meta.turtle_name],
+                                meta.species && meta.species !== "Unknown" && ["Species", meta.species],
+                                meta.sex && meta.sex !== "Unknown" && ["Sex", meta.sex],
+                                meta.island_origin && meta.island_origin !== "Unknown" && ["Island", meta.island_origin],
+                                meta.notes && ["Notes", meta.notes],
+                              ].filter(Boolean).map((item) => { const [label, value] = item as [string, string]; return (
+                                <div key={label as string} style={{ display: "flex", gap: "0.5rem", alignItems: "baseline", fontSize: "0.83rem", marginBottom: "0.2rem" }}>
+                                  <span style={{ color: "#8aa8ab", fontWeight: 600, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", minWidth: 52, flexShrink: 0 }}>{label}</span>
+                                  <span style={{ color: "#2d4a4d", fontWeight: 500 }}>{value}</span>
+                                </div>
+                              ); })}
+                            </div>
+                          )}
+
+                          {/* latest ping stats */}
+                          {batt ? (
+                            <>
+                              <div className="battery-gauge-wrap" style={{ marginBottom: "0.5rem" }}>
+                                <div className="battery-gauge-track">
+                                  <div className="battery-gauge-fill" style={{ width: `${Math.min(batt.batt_pct, 100)}%`, background: battColor(batt.batt_pct) }} />
+                                </div>
+                                <span className="battery-gauge-label" style={{ color: battColor(batt.batt_pct) }}>{batt.batt_pct}%</span>
+                              </div>
+                              <div style={{ display: "grid", gridTemplateColumns: "max-content 1fr", gap: "0.3rem 1rem", marginTop: "0.5rem", alignItems: "baseline" }}>
+                                <span className="bodytext" style={{ color: "#888", fontSize: "0.82rem" }}>Last seen</span>
+                                <span className="bodytext">{formatDate(batt.recorded_at)}</span>
+                                <span className="bodytext" style={{ color: "#888", fontSize: "0.82rem" }}>Battery</span>
+                                <span className="bodytext">{batt.batt_v.toFixed(3)} V · {batt.batt_pct}%</span>
+                                <span className="bodytext" style={{ color: "#888", fontSize: "0.82rem" }}>Fix type</span>
+                                <span className="bodytext">{batt.fix_type >= 0 ? `${batt.fix_type}D` : "—"}</span>
+                                <span className="bodytext" style={{ color: "#888", fontSize: "0.82rem" }}>Satellites</span>
+                                <span className="bodytext">{batt.siv >= 0 ? batt.siv : "—"}</span>
+                                <span className="bodytext" style={{ color: "#888", fontSize: "0.82rem" }}>Surface fix</span>
+                                <span className="bodytext">{batt.surface_fix ? "Yes" : "No"}</span>
+                                {batt.altitude_m != null && <><span className="bodytext" style={{ color: "#888", fontSize: "0.82rem" }}>Altitude</span><span className="bodytext">{batt.altitude_m.toFixed(1)} m</span></>}
+                                {batt.h_acc_m != null && <><span className="bodytext" style={{ color: "#888", fontSize: "0.82rem" }}>H. accuracy</span><span className="bodytext">{batt.h_acc_m.toFixed(2)} m</span></>}
+                                {batt.speed_mps != null && <><span className="bodytext" style={{ color: "#888", fontSize: "0.82rem" }}>Speed</span><span className="bodytext">{batt.speed_mps.toFixed(3)} m/s</span></>}
+                              </div>
+                            </>
+                          ) : (
+                            <p className="bodytext" style={{ color: "#999" }}>No ping data yet</p>
+                          )}
+
+                          <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); toggleVisible(name); }}
+                              style={{
+                                padding: "0.35rem 0.85rem",
+                                fontSize: "0.78rem",
+                                fontWeight: 600,
+                                borderRadius: "8px",
+                                border: `1.5px solid ${isVisible ? color.stroke : "#ccc"}`,
+                                background: isVisible ? color.stroke : "transparent",
+                                color: isVisible ? "#fff" : "#999",
+                                cursor: "pointer",
+                                transition: "all 0.18s ease",
+                              }}
+                            >
+                              {isVisible ? "Visible" : "Hidden"}
+                            </button>
+                            {isVisible && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const sensorPings = pings.filter((p) => {
+                                    const u = uploads.find((u) => u.id === p.upload_id);
+                                    return u?.filename === name && p.latitude != null && p.longitude != null;
+                                  });
+                                  if (sensorPings.length > 0) {
+                                    setZoomTarget({ name, trigger: Date.now() });
+                                  }
+                                }}
+                                style={{
+                                  padding: "0.35rem 0.85rem",
+                                  fontSize: "0.78rem",
+                                  fontWeight: 600,
+                                  borderRadius: "8px",
+                                  border: `1.5px solid ${color.stroke}`,
+                                  background: "transparent",
+                                  color: color.stroke,
+                                  cursor: "pointer",
+                                  transition: "all 0.18s ease",
+                                }}
+                                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = color.fill; }}
+                                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+                              >
+                                Zoom to path
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
+          </section>
 
-            <button className="btn">+ Add sensor</button>
-          </div>
+          {/* MAP */}
+          <section style={{ paddingTop: "1rem", paddingBottom: "1.5rem" }}>
+            <div className="container">
+              <div style={{ marginBottom: "0.75rem" }}>
+                <p className="heading2" style={{ margin: 0, color: "#006d77" }}>Migration Paths</p>
+                <p className="bodytext" style={{ margin: "0.25rem 0 0", color: "#5a8a8f", fontSize: "0.9rem" }}>
+                  GPS tracks plotted from uploaded sensor data. Each color represents a different turtle.
+                </p>
+              </div>
+              <div className="upload-map-wrap">
+                {mapCoords.length === 0 ? (
+                  <div className="upload-map-empty">
+                    <p>No GPS pings to display.</p>
+                    <p className="upload-map-empty-sub">Toggle sensors visible above, or upload data with GPS fixes.</p>
+                  </div>
+                ) : (
+                  <MapContainer center={mapCoords[0]} zoom={8} maxZoom={18} scrollWheelZoom className="leaflet-map" style={{ width: "100%", height: "100%" }}>
+                    <FitBounds coords={mapCoords} />
+                    {zoomTarget && (() => {
+                      const sensorCoords: [number, number][] = pings
+                        .filter((p) => {
+                          const u = uploads.find((u) => u.id === p.upload_id);
+                          return u?.filename === zoomTarget.name && p.latitude != null && p.longitude != null;
+                        })
+                        .map((p) => [p.latitude!, p.longitude!]);
+                      return <ZoomToSensor coords={sensorCoords} trigger={zoomTarget.trigger} />;
+                    })()}
+                    <LayersControl position="topright">
+                      <BaseLayer checked name="Esri Ocean Basemap">
+                        <TileLayer attribution="Tiles &copy; Esri" url="https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}" />
+                      </BaseLayer>
+                      <BaseLayer name="OpenStreetMap">
+                        <TileLayer attribution="&copy; OSM" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                      </BaseLayer>
+                      <BaseLayer name="Satellite">
+                        <TileLayer attribution="Tiles &copy; Esri" url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
+                      </BaseLayer>
+                      <Overlay checked name="Ocean Labels">
+                        <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Reference/MapServer/tile/{z}/{y}/{x}" opacity={0.9} zIndex={400} />
+                      </Overlay>
+                    </LayersControl>
 
-          {/* SENSOR CARDS */}
-          <div className={gridClassName}>
-            {filteredSensors.map((sensor) => {
-              const isActive = sensor.id === activeId;
-              return (
-                <SensorCard
-                  key={sensor.id}
-                  sensor={sensor}
-                  isActive={isActive}
-                  onToggle={() =>
-                    setActiveId((prev) =>
-                      prev === sensor.id ? null : sensor.id
-                    )
-                  }
-                />
-              );
-            })}
-            {filteredSensors.length === 0 && (
-              <p className="bodytext sensors-empty">
-                No sensors match your filters.
+                    {mapGroups.map((group) => {
+                      const gc: [number, number][] = group.pings.map((p) => [p.latitude!, p.longitude!]);
+                      const meta = metaByName.get(group.name);
+                      const label = meta?.turtle_name || group.name;
+                      return (
+                        <React.Fragment key={group.name}>
+                          <Polyline positions={gc} pathOptions={{ color: group.color.stroke, weight: 3, opacity: 0.8 }} />
+                          {group.pings.map((p, i) => (
+                            <CircleMarker key={p.id} center={[p.latitude!, p.longitude!]} radius={6}
+                              pathOptions={{ color: group.color.stroke, fillColor: group.color.fill, fillOpacity: 0.9, weight: 2 }}>
+                              <Tooltip direction="top" offset={[0, -8]}>
+                                <span style={{ fontWeight: 600 }}>{label}</span><br />
+                                Ping #{i + 1}<br />
+                                {p.latitude!.toFixed(6)}, {p.longitude!.toFixed(6)}<br />
+                                {formatShortTime(p.recorded_at)}
+                              </Tooltip>
+                              <Popup>
+                                <strong>{label}</strong> — Ping #{i + 1}<br />
+                                Lat: {p.latitude!.toFixed(6)}<br />Lon: {p.longitude!.toFixed(6)}<br />
+                                Time: {formatDate(p.recorded_at)}<br />Battery: {p.batt_pct}%
+                                {p.altitude_m != null && <><br />Altitude: {p.altitude_m.toFixed(1)} m</>}
+                                {p.speed_mps != null && <><br />Speed: {p.speed_mps.toFixed(2)} m/s</>}
+                              </Popup>
+                            </CircleMarker>
+                          ))}
+                        </React.Fragment>
+                      );
+                    })}
+                  </MapContainer>
+                )}
+                {mapGroups.length > 0 && (
+                  <div className="upload-map-legend">
+                    {mapGroups.map((g) => {
+                      const meta = metaByName.get(g.name);
+                      return (
+                        <div className="upload-legend-item" key={g.name}>
+                          <span className="upload-legend-dot" style={{ background: g.color.fill, borderColor: g.color.stroke }} />
+                          {meta?.turtle_name || g.name}
+                        </div>
+                      );
+                    })}
+                    <div className="upload-legend-item"><span className="upload-legend-line" /> Path</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* BATTERY STATUS */}
+          {batterySummary.size > 0 && (
+            <section className="section">
+              <div className="container">
+                <h3 className="upload-section-title">Sensor Battery Status</h3>
+                <div className="battery-summary-grid">
+                  {Array.from(batterySummary.entries()).map(([name, b]) => {
+                    const meta = metaByName.get(name);
+                    return (
+                      <div className="battery-card" key={name}>
+                        <div className="battery-card-name">{meta?.turtle_name || name}</div>
+                        <div className="battery-gauge-wrap">
+                          <div className="battery-gauge-track">
+                            <div className="battery-gauge-fill" style={{ width: `${Math.min(b.batt_pct, 100)}%`, background: battColor(b.batt_pct) }} />
+                          </div>
+                          <span className="battery-gauge-label" style={{ color: battColor(b.batt_pct) }}>{b.batt_pct}%</span>
+                        </div>
+                        <div className="battery-card-detail">{b.batt_v.toFixed(3)} V · last seen {formatDate(b.recorded_at)}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ── UPLOAD HISTORY + DELETION ── */}
+          <section className="section">
+            <div className="container">
+              <h3 className="upload-section-title">Upload History &amp; Data Management</h3>
+              <p className="bodytext" style={{ marginBottom: "1.5rem", color: "#666" }}>
+                Expand a sensor to see its upload sessions. You can delete individual pings or entire sessions.
               </p>
-            )}
-          </div>
-        </div>
-      </section>
 
-      {/* LEAFLET PATH MAP SECTION */}
-      <section className="section">
-        <div className="container">
-          <LeafletPathMap activeSensor={activeSensor} activeTrack={activeTrack} />
-        </div>
-      </section>
+              <div className="upload-history-grouped">
+                {uploadsByTurtle.map(([filename, turtleUploads]) => {
+                  const cidx = colorMap.get(filename) ?? 0;
+                  const color = getColor(cidx);
+                  const isExpanded = expandedTurtle === filename;
+                  const totalPings = turtleUploads.reduce((s, u) => s + u.ping_count, 0);
+                  const meta = metaByName.get(filename);
+                  const displayName = meta?.turtle_name || filename;
 
-      {/* CUSTOM SENSOR BUILD SECTION (unchanged) */}
+                  return (
+                    <div className="upload-history-turtle" key={filename}>
+                      <div className="upload-history-turtle-header" onClick={() => setExpandedTurtle(isExpanded ? null : filename)}>
+                        <span className="upload-history-turtle-dot" style={{ background: color.fill, borderColor: color.stroke }} />
+                        <span className="upload-history-turtle-name">{displayName}</span>
+                        {displayName !== filename && <span className="upload-history-turtle-meta" style={{ color: "#999", fontSize: "0.8rem" }}>{filename}</span>}
+                        <span className="upload-history-turtle-meta">{turtleUploads.length} session{turtleUploads.length !== 1 ? "s" : ""} · {totalPings} pings</span>
+                        <span className={`upload-history-chevron ${isExpanded ? "open" : ""}`}>▸</span>
+                      </div>
+
+                      {isExpanded && (
+                        <div className="upload-history-turtle-entries">
+                          {turtleUploads.map((u) => {
+                            const isUploadExpanded = expandedUploadId === u.id;
+                            const pingsForUpload = uploadPingsCache.get(u.id) || [];
+                            return (
+                              <div key={u.id}>
+                                <div className="upload-history-entry">
+                                  <div className="upload-history-entry-info" onClick={() => toggleExpandUpload(u.id)} style={{ cursor: "pointer", flex: 1 }}>
+                                    <span className={`upload-history-entry-chevron ${isUploadExpanded ? "open" : ""}`}>▸</span>
+                                    <span className="upload-history-entry-id">#{u.id}</span>
+                                    <span>{u.ping_count} pings</span>
+                                    {u.duplicate_count > 0 && <span className="upload-history-entry-dupes">{u.duplicate_count} dupes skipped</span>}
+                                    <span className="upload-history-entry-date">{formatDate(u.uploaded_at)}</span>
+                                  </div>
+                                  <button
+                                    className="upload-btn-delete"
+                                    onClick={() => handleDeleteUpload(u.id)}
+                                    disabled={deleting === u.id}
+                                    title="Delete entire upload session and all its pings"
+                                  >
+                                    {deleting === u.id ? "…" : "Delete All"}
+                                  </button>
+                                </div>
+
+                                {isUploadExpanded && (
+                                  <div className="upload-history-pings">
+                                    {pingsForUpload.length === 0 ? (
+                                      <div className="upload-history-ping-row" style={{ color: "#999", fontStyle: "italic" }}>Loading pings…</div>
+                                    ) : (
+                                      pingsForUpload.map((p, pi) => (
+                                        <div className="upload-history-ping-row" key={p.id} style={{ flexDirection: "column", alignItems: "flex-start", gap: "0.4rem", padding: "0.6rem 0.75rem" }}>
+                                          <div style={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center" }}>
+                                            <span className="upload-history-ping-num" style={{ fontWeight: 700 }}>#{pi + 1} &nbsp;<span style={{ color: "#999", fontWeight: 400, fontSize: "0.8rem" }}>{formatDate(p.recorded_at)}</span></span>
+                                            <button
+                                              className="upload-btn-delete-sm"
+                                              onClick={() => handleDeletePing(p.id)}
+                                              disabled={deletingPing === p.id}
+                                              title="Delete this single ping"
+                                            >
+                                              {deletingPing === p.id ? "…" : "✕"}
+                                            </button>
+                                          </div>
+                                          <div style={{ display: "grid", gridTemplateColumns: "max-content 1fr max-content 1fr", gap: "0.2rem 1.2rem", fontSize: "0.82rem", width: "100%" }}>
+                                            <span style={{ color: "#888" }}>Position</span>
+                                            <span>{p.latitude != null ? `${p.latitude.toFixed(6)}, ${p.longitude!.toFixed(6)}` : "No GPS"}</span>
+                                            <span style={{ color: "#888" }}>Battery</span>
+                                            <span>{p.batt_v.toFixed(3)} V · {p.batt_pct}%</span>
+                                            <span style={{ color: "#888" }}>Fix type</span>
+                                            <span>{p.fix_type >= 0 ? `${p.fix_type}D` : "—"}</span>
+                                            <span style={{ color: "#888" }}>Satellites</span>
+                                            <span>{p.siv >= 0 ? p.siv : "—"}</span>
+                                            <span style={{ color: "#888" }}>Surface fix</span>
+                                            <span>{p.surface_fix ? "Yes" : "No"}</span>
+                                            <span style={{ color: "#888" }}>Uptime</span>
+                                            <span>{p.uptime_min.toFixed(2)} min</span>
+                                            {p.altitude_m != null && <><span style={{ color: "#888" }}>Altitude</span><span>{p.altitude_m.toFixed(1)} m</span></>}
+                                            {p.h_acc_m != null && <><span style={{ color: "#888" }}>H. accuracy</span><span>{p.h_acc_m.toFixed(2)} m</span></>}
+                                            {p.speed_mps != null && <><span style={{ color: "#888" }}>Speed</span><span>{p.speed_mps.toFixed(3)} m/s</span></>}
+                                          </div>
+                                        </div>
+                                      ))
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        </>
+      )}
+
+      {/* SENSOR BUILD */}
       <section className="section">
         <div className="container">
           <p className="heading2 mb-4">Our Custom Sensor Build</p>
-          <p className="bodytext mb-4">
-            A snapshot of the sensor we built, the components we selected, and
-            how each choice supports reliable, low-impact monitoring. Replace
-            these placeholders with final photos and copy.
-          </p>
-
+          <p className="bodytext mb-4">A snapshot of the sensor we built and the components we selected.</p>
           <div className="sensor-build-grid">
             <div className="card sensor-build-card">
               <p className="heading3">Sensor Overview</p>
-              <div className="sensor-placeholder-image">
-                Main sensor photo / CAD render
-              </div>
-              <p className="bodytext sensor-placeholder-text">
-                Placeholder: high-level description of the device (enclosure,
-                waterproofing, mounting strategy, dimensions, deployment
-                environment).
-              </p>
+              <div className="sensor-placeholder-image">Main sensor photo / CAD render</div>
+              <p className="bodytext sensor-placeholder-text">Placeholder: enclosure, waterproofing, mounting strategy, dimensions.</p>
             </div>
-
             <div className="card sensor-build-card">
               <p className="heading3">Key Components</p>
-              <div className="sensor-placeholder-image small">
-                PCB / components layout image
-              </div>
+              <div className="sensor-placeholder-image small">PCB / components layout image</div>
               <ul className="bodytext sensor-parts-list">
-                <li>
-                  <strong>Microcontroller:</strong> Placeholder for MCU model
-                  and why it fits low-power, remote deployments.
-                </li>
-                <li>
-                  <strong>Sensors:</strong> Placeholder for temperature/motion/
-                  pressure modules and selection criteria.
-                </li>
-                <li>
-                  <strong>Power:</strong> Placeholder for battery / solar design
-                  and expected runtime.
-                </li>
-                <li>
-                  <strong>Connectivity:</strong> Placeholder for LoRa / LTE /
-                  satellite choice and coverage rationale.
-                </li>
+                <li><strong>Microcontroller:</strong> Low-power MCU for remote deployments.</li>
+                <li><strong>Sensors:</strong> Temperature / motion / pressure modules.</li>
+                <li><strong>Power:</strong> Battery / solar design and expected runtime.</li>
+                <li><strong>Connectivity:</strong> LoRa / LTE / satellite coverage rationale.</li>
               </ul>
             </div>
-
             <div className="card sensor-build-card">
               <p className="heading3">Design Rationale</p>
-              <p className="bodytext sensor-placeholder-text">
-                Placeholder: describe trade-offs between accuracy, durability,
-                cost, and serviceability in island/marine environments.
-              </p>
-              <p className="bodytext sensor-placeholder-text">
-                Placeholder: explain how field tests and partner feedback shaped
-                enclosure design, mounting, and sampling strategy.
-              </p>
+              <p className="bodytext sensor-placeholder-text">Trade-offs between accuracy, durability, cost, and serviceability in island/marine environments.</p>
             </div>
           </div>
         </div>
       </section>
     </>
-  );
-};
-
-interface SensorCardProps {
-  sensor: Sensor;
-  isActive: boolean;
-  onToggle: () => void;
-}
-
-const SensorCard: React.FC<SensorCardProps> = ({
-  sensor,
-  isActive,
-  onToggle,
-}) => {
-  const statusClass =
-    sensor.status === "online"
-      ? "status-pill status-online"
-      : sensor.status === "offline"
-      ? "status-pill status-offline"
-      : "status-pill status-warning";
-
-  return (
-    <div
-      className={`card sensor-card ${isActive ? "is-open" : ""}`}
-      onClick={onToggle}
-    >
-      <div className="sensor-card-header">
-        <p className="sensor-title">{sensor.name}</p>
-        <p className="sensor-id">{sensor.id}</p>
-      </div>
-
-      <div className={`sensor-card-body-wrapper ${isActive ? "open" : ""}`}>
-        <div className="sensor-card-body">
-          <p className="bodytext">
-            <strong>Type:</strong> {sensor.type}
-          </p>
-          <p className="bodytext">
-            <strong>Location:</strong> {sensor.location}
-          </p>
-          <p className="bodytext">
-            <strong>Status:</strong>{" "}
-            <span className={statusClass}>{sensor.status}</span>
-          </p>
-          <p className="bodytext">
-            <strong>Last reading:</strong> {sensor.lastReading}
-          </p>
-          <p className="bodytext sensors-subtext">
-            Updated {sensor.lastUpdated}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-/* === LEAFLET MAP SHOWING HISTORY + PREDICTION === */
-
-interface LeafletPathMapProps {
-  activeSensor: Sensor | null;
-  activeTrack: Track | null;
-}
-
-const LeafletPathMap: React.FC<LeafletPathMapProps> = ({
-  activeSensor,
-  activeTrack,
-}) => {
-  const mapDivRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<L.Map | null>(null);
-  const layerGroupRef = useRef<L.LayerGroup | null>(null);
-  const [countdown, setCountdown] = useState(8);
-
-  // Mock "refresh" countdown
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      setCountdown((prev) => (prev <= 1 ? 8 : prev - 1));
-    }, 1000);
-    return () => window.clearInterval(id);
-  }, []);
-
-  // Initialise Leaflet map once
-  useEffect(() => {
-    if (!mapDivRef.current || mapRef.current) return;
-
-    const map = L.map(mapDivRef.current, {
-      center: [13.8, -81.0],
-      zoom: 6,
-      zoomControl: false,
-    });
-
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "&copy; OpenStreetMap contributors",
-    }).addTo(map);
-
-    L.control.zoom({ position: "topright" }).addTo(map);
-
-    mapRef.current = map;
-    layerGroupRef.current = L.layerGroup().addTo(map);
-  }, []);
-
-  // Update tracks whenever the active sensor or track changes
-  useEffect(() => {
-    const map = mapRef.current;
-    const layerGroup = layerGroupRef.current;
-    if (!map || !layerGroup) return;
-
-    layerGroup.clearLayers();
-
-    if (!activeSensor || !activeTrack || activeTrack.history.length === 0) {
-      // Nothing selected or no data
-      return;
-    }
-
-    const historyLatLngs = activeTrack.history.map(([lat, lng]) =>
-      L.latLng(lat, lng)
-    );
-    const predictedLatLngs = activeTrack.predicted.map(([lat, lng]) =>
-      L.latLng(lat, lng)
-    );
-
-    // History line
-    const historyLine = L.polyline(historyLatLngs, {
-      color: "#2ecc71",
-      weight: 3,
-    }).addTo(layerGroup);
-
-    // Predicted line (dashed) - only if we have predicted points
-    if (predictedLatLngs.length > 0) {
-      L.polyline(predictedLatLngs, {
-        color: "#f1c40f",
-        weight: 3,
-        dashArray: "8 6",
-      }).addTo(layerGroup);
-    }
-
-    // Latest position marker at END of history
-    const lastPoint = historyLatLngs[historyLatLngs.length - 1];
-    const marker = L.circleMarker(lastPoint, {
-      radius: 6,
-      color: "#2ecc71",
-      fillColor: "#2ecc71",
-      fillOpacity: 1,
-    }).addTo(layerGroup);
-
-    marker.bindPopup(
-      `<strong>${activeSensor.name}</strong><br/>${activeSensor.id}<br/>${lastPoint.lat.toFixed(
-        2
-      )}, ${lastPoint.lng.toFixed(2)}`
-    );
-
-    // Fit map to show all points
-    const allPoints =
-      predictedLatLngs.length > 0
-        ? [...historyLatLngs, ...predictedLatLngs]
-        : historyLatLngs;
-
-    const bounds = L.latLngBounds(allPoints);
-    map.fitBounds(bounds, { padding: [40, 40] });
-  }, [activeSensor, activeTrack]);
-
-  return (
-    <div className="card map-card">
-      <div className="map-header-row">
-        <div>
-          <p className="heading3 mb-2">Deployment Map</p>
-          <p className="bodytext map-subtitle">
-            {activeSensor
-              ? `Path of ${activeSensor.name} based on tracked locations from the backend.`
-              : "Click on a TURTLE sensor above to visualize its recent path."}
-          </p>
-        </div>
-        <div className="map-meta">
-          <span className="map-badge">Mock live</span>
-          <span className="map-timer">
-            Next mock refresh in {countdown}s
-          </span>
-        </div>
-      </div>
-
-      <div className="map-leaflet-wrapper" ref={mapDivRef} />
-
-      <div className="map-legend">
-        <div className="map-legend-item">
-          <span className="map-legend-dot online" />
-          <span className="bodytext">Latest position</span>
-        </div>
-        <div className="map-legend-item">
-          <span className="map-legend-dot online" />
-          <span className="bodytext">History (solid)</span>
-        </div>
-        <div className="map-legend-item">
-          <span className="map-legend-dot warning" />
-          <span className="bodytext">Predicted (dashed)</span>
-        </div>
-        <span className="map-legend-note bodytext">
-          Paths and predictions use backend + mock logic for demonstration.
-        </span>
-      </div>
-    </div>
   );
 };
 
