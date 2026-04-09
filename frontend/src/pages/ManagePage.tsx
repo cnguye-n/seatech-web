@@ -300,11 +300,13 @@ export default function ManagePage() {
 
   return (
     <main className="upload-data-page">
-      <div className="upload-hero">
-        <h1 className="heading1">Manage Data</h1>
-        <p className="bodytext">
-          Fill in the turtle's details, then upload its tracker CSV. The info will appear on the Sensor page.
-        </p>
+      <div className="section">
+        <div className="container">
+          <p className="heading1" style={{ marginBottom: "0.5rem" }}>Manage Data</p>
+          <p className="bodytext" style={{ color: "#5a8a8f", marginBottom: 0 }}>
+            Register a turtle and upload its tracker CSV. Metadata will appear on the Sensor page alongside the GPS track.
+          </p>
+        </div>
       </div>
 
       <div className="container">
