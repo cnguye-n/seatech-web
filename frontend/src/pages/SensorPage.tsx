@@ -260,7 +260,7 @@ const SensorPage: React.FC = () => {
       {/* HERO */}
       <main style={{ paddingTop: "2rem", paddingBottom: "1rem" }}>
         <div className="container">
-          <p className="heading1" style={{ marginBottom: "0.5rem" }}>Sensors</p>
+          <p className="heading1" style={{ marginBottom: "0.5rem" }}>Sensor Data</p>
           <p className="bodytext" style={{ color: "#5a8a8f", marginBottom: 0 }}>
             Real-time GPS tracking data from deployed RAK sensors. Click a sensor card to expand its details, or use the map to explore migration paths.
           </p>
