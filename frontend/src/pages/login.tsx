@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import "../styles/pages/login.css";
@@ -13,6 +13,8 @@ export default function Login() {
   const { user, loginWithGoogleToken, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   useEffect(() => {
     if (user) return;
@@ -66,6 +68,32 @@ export default function Login() {
     }
   }
 
+  async function handleEmailLogin() {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "Login failed");
+        return;
+      }
+
+      localStorage.setItem("token", data.token);
+
+      const destination = location.state?.from?.pathname || "/";
+      navigate(destination, { replace: true });
+    } catch (err) {
+      console.error("Email login error:", err);
+      alert("Server error during login");
+    }
+  }
   function handleLogout() {
     const email = user?.email;
     logout();
@@ -126,6 +154,8 @@ export default function Login() {
                     type="email"
                     className="login-input"
                     placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
                 <div className="login-input-group">
@@ -135,9 +165,11 @@ export default function Login() {
                     type="password"
                     className="login-input"
                     placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                   />
                 </div>
-                <button className="login-submit-btn" type="button">
+                <button className="login-submit-btn" type="button" onClick={handleEmailLogin}>
                   Sign in
                 </button>
               </div>
