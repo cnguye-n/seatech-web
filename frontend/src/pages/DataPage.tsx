@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { Link } from "react-router-dom";
 import type { DragEvent, ChangeEvent } from "react";
 import {
   MapContainer,
@@ -27,6 +28,9 @@ type PingRow = {
   latitude: number | null;
   longitude: number | null;
   surfaceFix: number;
+  altitudeM: number | null;
+  hAccM: number | null;
+  speedMps: number | null;
   hasGps: boolean;
   isDuplicate: boolean;
   selected: boolean;
@@ -64,87 +68,207 @@ type StoredPing = {
   longitude: number | null;
   surface_fix: number;
   recorded_at: string | null;
+  altitude_m: number | null;
+  h_acc_m: number | null;
+  speed_mps: number | null;
 };
 
-// csv parser
-
-const REQUIRED_COLUMNS = [
-  "uptime_min", "batt_v", "batt_pct", "fixType",
-  "siv", "lat_1e7", "lon_1e7", "surfaceFix",
-];
+// ─── CSV parser ────────────────────────────────────────────────────────────────
+//
+// Supports TWO formats, auto-detected by header:
+//
+// NEW (utc_iso-based):
+//   utc_iso, latitude, longitude, altitude_m, hAcc_m, speed_mps,
+//   surfaceFix, fixType, siv, uptime_min, batt_v, batt_pct
+//
+// OLD (lat_1e7-based):
+//   uptime_min, batt_v, batt_pct, fixType, siv, lat_1e7, lon_1e7, surfaceFix
+//   (optional Timestamp column for recorded_at)
 
 function parseSingleCSV(text: string, fileName: string, uploadTimestamp: string): ParseResult {
   const lines = text.trim().split(/\r?\n/);
   if (lines.length < 2) {
-    return { rows: [], totalRows: 0, gpsRows: 0, noGpsRows: 0, duplicateCount: 0, alreadyProcessed: false, error: `${fileName}: File is empty or has no data rows.`, fileNames: [fileName] };
+    return {
+      rows: [], totalRows: 0, gpsRows: 0, noGpsRows: 0, duplicateCount: 0,
+      alreadyProcessed: false,
+      error: `${fileName}: File is empty or has no data rows.`,
+      fileNames: [fileName],
+    };
   }
 
   const rawHeaders = lines[0].split(",").map((h) => h.trim());
   const lowerHeaders = rawHeaders.map((h) => h.toLowerCase());
 
-  if (lowerHeaders.includes("seq_no") || (lowerHeaders.includes("table") && lowerHeaders.includes("row_count"))) {
-    return { rows: [], totalRows: 0, gpsRows: 0, noGpsRows: 0, duplicateCount: 0, alreadyProcessed: true, error: null, fileNames: [fileName] };
-  }
-
-  const missing = REQUIRED_COLUMNS.filter((col) => !rawHeaders.includes(col));
-  if (missing.length > 0) {
+  // detect already-processed summary files
+  if (
+    lowerHeaders.includes("seq_no") ||
+    (lowerHeaders.includes("table") && lowerHeaders.includes("row_count"))
+  ) {
     return {
-      rows: [], totalRows: 0, gpsRows: 0, noGpsRows: 0, duplicateCount: 0, alreadyProcessed: false,
-      error: `${fileName}: Missing columns: ${missing.join(", ")}. Found: ${rawHeaders.join(", ")}`,
-      fileNames: [fileName],
+      rows: [], totalRows: 0, gpsRows: 0, noGpsRows: 0, duplicateCount: 0,
+      alreadyProcessed: true, error: null, fileNames: [fileName],
     };
   }
 
-  const idx = Object.fromEntries(rawHeaders.map((h, i) => [h, i])) as Record<string, number>;
-  const baseTime = new Date(uploadTimestamp).getTime();
-  const seen = new Set<string>();
-  const rows: PingRow[] = [];
+  const isNewFormat = lowerHeaders.includes("utc_iso");
 
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-    const cols = line.split(",").map((c) => c.trim());
-
-    const uptimeMin = parseFloat(cols[idx["uptime_min"]] ?? "0");
-    const battV = parseFloat(cols[idx["batt_v"]] ?? "0");
-    const battPct = parseInt(cols[idx["batt_pct"]] ?? "0", 10);
-    const fixType = parseInt(cols[idx["fixType"]] ?? "-1", 10);
-    const siv = parseInt(cols[idx["siv"]] ?? "-1", 10);
-    const rawLat = cols[idx["lat_1e7"]] ?? "";
-    const rawLon = cols[idx["lon_1e7"]] ?? "";
-    const surfaceFix = parseInt(cols[idx["surfaceFix"]] ?? "0", 10);
-
-    let latitude: number | null = null;
-    let longitude: number | null = null;
-    if (rawLat !== "" && rawLon !== "") {
-      const latVal = parseFloat(rawLat);
-      const lonVal = parseFloat(rawLon);
-      if (!isNaN(latVal) && !isNaN(lonVal)) {
-        latitude = Math.abs(latVal) > 1000 ? latVal / 1e7 : latVal;
-        longitude = Math.abs(lonVal) > 1000 ? lonVal / 1e7 : lonVal;
-      }
+  if (isNewFormat) {
+    // ── NEW FORMAT ──────────────────────────────────────────────────────────
+    const required = ["utc_iso", "latitude", "longitude", "uptime_min", "batt_v", "batt_pct", "fixtype", "siv", "surfacefix"];
+    const missing = required.filter((c) => !lowerHeaders.includes(c));
+    if (missing.length > 0) {
+      return {
+        rows: [], totalRows: 0, gpsRows: 0, noGpsRows: 0, duplicateCount: 0,
+        alreadyProcessed: false,
+        error: `${fileName}: Missing columns: ${missing.join(", ")}. Found: ${rawHeaders.join(", ")}`,
+        fileNames: [fileName],
+      };
     }
 
-    const hasGps = latitude !== null && longitude !== null && fixType >= 2;
-    const recordedAt = new Date(baseTime + uptimeMin * 60 * 1000).toISOString();
-    const fp = `${fileName}|${uptimeMin}|${latitude}|${longitude}`;
-    const isDuplicate = seen.has(fp);
-    seen.add(fp);
+    const idx = Object.fromEntries(lowerHeaders.map((h, i) => [h, i])) as Record<string, number>;
+    const seen = new Set<string>();
+    const rows: PingRow[] = [];
 
-    rows.push({
-      sourceFile: fileName, uptimeMin, battV, battPct: isNaN(battPct) ? 0 : battPct,
-      fixType, siv, latitude, longitude, surfaceFix, hasGps, isDuplicate,
-      selected: hasGps && !isDuplicate, recordedAt,
-    });
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      const cols = line.split(",").map((c) => c.trim());
+
+      const utcIso = cols[idx["utc_iso"]] ?? "";
+      const latStr = cols[idx["latitude"]] ?? "";
+      const lonStr = cols[idx["longitude"]] ?? "";
+      const altStr = cols[idx["altitude_m"]] ?? "";
+      const hAccStr = cols[idx["hacc_m"]] ?? "";
+      const speedStr = cols[idx["speed_mps"]] ?? "";
+      const surfaceStr = cols[idx["surfacefix"]] ?? "0";
+      const fixTypeStr = cols[idx["fixtype"]] ?? "-1";
+      const sivStr = cols[idx["siv"]] ?? "-1";
+      const uptimeStr = cols[idx["uptime_min"]] ?? "0";
+      const battVStr = cols[idx["batt_v"]] ?? "0";
+      const battPctStr = cols[idx["batt_pct"]] ?? "0";
+
+      const uptimeMin = parseFloat(uptimeStr) || 0;
+      const battV = parseFloat(battVStr) || 0;
+      const battPct = parseInt(battPctStr, 10) || 0;
+      const fixType = parseInt(fixTypeStr, 10);
+      const siv = parseInt(sivStr, 10);
+      const surfaceFix = parseInt(surfaceStr, 10) || 0;
+      const altitudeM = altStr !== "" ? parseFloat(altStr) : null;
+      const hAccM = hAccStr !== "" ? parseFloat(hAccStr) : null;
+      const speedMps = speedStr !== "" ? parseFloat(speedStr) : null;
+
+      let latitude: number | null = null;
+      let longitude: number | null = null;
+      if (latStr !== "" && lonStr !== "") {
+        const lv = parseFloat(latStr);
+        const lnv = parseFloat(lonStr);
+        if (!isNaN(lv) && !isNaN(lnv) && !(lv === 0 && lnv === 0)) {
+          latitude = lv;
+          longitude = lnv;
+        }
+      }
+
+      let recordedAt: string;
+      if (utcIso) {
+        recordedAt = utcIso.endsWith("Z") ? utcIso : utcIso + "Z";
+      } else {
+        recordedAt = new Date(new Date(uploadTimestamp).getTime() + uptimeMin * 60 * 1000).toISOString();
+      }
+
+      const hasGps = latitude !== null && longitude !== null;
+      const fp = `${fileName}|${uptimeMin}|${latitude}|${longitude}`;
+      const isDuplicate = seen.has(fp);
+      seen.add(fp);
+
+      rows.push({
+        sourceFile: fileName, uptimeMin, battV, battPct: isNaN(battPct) ? 0 : battPct,
+        fixType: isNaN(fixType) ? -1 : fixType, siv: isNaN(siv) ? -1 : siv,
+        latitude, longitude, surfaceFix, altitudeM, hAccM, speedMps,
+        hasGps, isDuplicate, selected: hasGps && !isDuplicate, recordedAt,
+      });
+    }
+
+    return {
+      rows, totalRows: rows.length,
+      gpsRows: rows.filter((r) => r.hasGps).length,
+      noGpsRows: rows.filter((r) => !r.hasGps).length,
+      duplicateCount: rows.filter((r) => r.isDuplicate).length,
+      alreadyProcessed: false, error: null, fileNames: [fileName],
+    };
+
+  } else {
+    // ── OLD FORMAT (backward-compatible) ────────────────────────────────────
+    const required = ["uptime_min", "batt_v", "batt_pct", "fixType", "siv", "lat_1e7", "lon_1e7", "surfaceFix"];
+    const missing = required.filter((c) => !rawHeaders.includes(c));
+    if (missing.length > 0) {
+      return {
+        rows: [], totalRows: 0, gpsRows: 0, noGpsRows: 0, duplicateCount: 0,
+        alreadyProcessed: false,
+        error: `${fileName}: Missing columns: ${missing.join(", ")}. Found: ${rawHeaders.join(", ")}`,
+        fileNames: [fileName],
+      };
+    }
+
+    const idx = Object.fromEntries(rawHeaders.map((h, i) => [h, i])) as Record<string, number>;
+    const baseTime = new Date(uploadTimestamp).getTime();
+    const seen = new Set<string>();
+    const rows: PingRow[] = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      const cols = line.split(",").map((c) => c.trim());
+
+      const uptimeMin = parseFloat(cols[idx["uptime_min"]] ?? "0");
+      const battV = parseFloat(cols[idx["batt_v"]] ?? "0");
+      const battPct = parseInt(cols[idx["batt_pct"]] ?? "0", 10);
+      const fixType = parseInt(cols[idx["fixType"]] ?? "-1", 10);
+      const siv = parseInt(cols[idx["siv"]] ?? "-1", 10);
+      const rawLat = cols[idx["lat_1e7"]] ?? "";
+      const rawLon = cols[idx["lon_1e7"]] ?? "";
+      const surfaceFix = parseInt(cols[idx["surfaceFix"]] ?? "0", 10);
+
+      let latitude: number | null = null;
+      let longitude: number | null = null;
+      if (rawLat !== "" && rawLon !== "") {
+        const latVal = parseFloat(rawLat);
+        const lonVal = parseFloat(rawLon);
+        if (!isNaN(latVal) && !isNaN(lonVal)) {
+          latitude = Math.abs(latVal) > 1000 ? latVal / 1e7 : latVal;
+          longitude = Math.abs(lonVal) > 1000 ? lonVal / 1e7 : lonVal;
+        }
+      }
+
+      // use Timestamp column if present, otherwise derive from uptime
+      const tsCol = rawHeaders.includes("Timestamp") ? cols[idx["Timestamp"]] ?? "" : "";
+      let recordedAt: string;
+      if (tsCol) {
+        recordedAt = tsCol.endsWith("Z") ? tsCol : tsCol + "Z";
+      } else {
+        recordedAt = new Date(baseTime + uptimeMin * 60 * 1000).toISOString();
+      }
+
+      const hasGps = latitude !== null && longitude !== null && fixType >= 2;
+      const fp = `${fileName}|${uptimeMin}|${latitude}|${longitude}`;
+      const isDuplicate = seen.has(fp);
+      seen.add(fp);
+
+      rows.push({
+        sourceFile: fileName, uptimeMin, battV, battPct: isNaN(battPct) ? 0 : battPct,
+        fixType, siv, latitude, longitude, surfaceFix,
+        altitudeM: null, hAccM: null, speedMps: null,
+        hasGps, isDuplicate, selected: hasGps && !isDuplicate, recordedAt,
+      });
+    }
+
+    return {
+      rows, totalRows: rows.length,
+      gpsRows: rows.filter((r) => r.hasGps).length,
+      noGpsRows: rows.filter((r) => !r.hasGps).length,
+      duplicateCount: rows.filter((r) => r.isDuplicate).length,
+      alreadyProcessed: false, error: null, fileNames: [fileName],
+    };
   }
-
-  return {
-    rows, totalRows: rows.length,
-    gpsRows: rows.filter((r) => r.hasGps).length,
-    noGpsRows: rows.filter((r) => !r.hasGps).length,
-    duplicateCount: rows.filter((r) => r.isDuplicate).length,
-    alreadyProcessed: false, error: null, fileNames: [fileName],
-  };
 }
 
 function mergeResults(results: ParseResult[]): ParseResult {
@@ -165,25 +289,28 @@ function mergeResults(results: ParseResult[]): ParseResult {
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
   try {
-    return new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    return new Date(iso).toLocaleString(undefined, {
+      month: "short", day: "numeric", year: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    });
   } catch { return iso; }
 }
 
 function formatShortTime(iso: string | null): string {
   if (!iso) return "—";
   try {
-    return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    return new Date(iso).toLocaleTimeString(undefined, {
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+    });
   } catch { return iso; }
 }
 
-// battery gauge color!
 function battColor(pct: number): string {
   if (pct >= 60) return "#2ecc71";
   if (pct >= 30) return "#f39c12";
   return "#e74c3c";
 }
 
-// Each upload_id (CSV file / sensor) gets its own color.
 const TURTLE_COLORS = [
   { stroke: "#006d77", fill: "#83c5be", name: "Teal" },
   { stroke: "#e63946", fill: "#f4a3ab", name: "Red" },
@@ -199,7 +326,6 @@ function getColorForIndex(i: number) {
   return TURTLE_COLORS[i % TURTLE_COLORS.length];
 }
 
-// build a stable color map: filename → color index
 function buildColorMap(uploads: UploadRecord[]): Map<string, number> {
   const seen = new Map<string, number>();
   const sorted = [...uploads].sort((a, b) => a.id - b.id);
@@ -235,7 +361,6 @@ function PingMap({ pings, uploads, visibleUploadIds }: {
   );
   const coords: [number, number][] = filteredPings.map((p) => [p.latitude!, p.longitude!]);
 
-  // group by upload_id
   const groups = useMemo(() => {
     const map = new Map<number, StoredPing[]>();
     for (const p of filteredPings) {
@@ -296,8 +421,10 @@ function PingMap({ pings, uploads, visibleUploadIds }: {
                   <Popup>
                     <strong>{group.label}</strong> — Ping #{i + 1}<br />
                     Lat: {p.latitude!.toFixed(6)}<br />Lon: {p.longitude!.toFixed(6)}<br />
-                    Time: {formatDate(p.recorded_at)}
-                    <br />Battery: {p.batt_pct}%
+                    Time: {formatDate(p.recorded_at)}<br />
+                    Battery: {p.batt_pct}%
+                    {p.altitude_m != null && <><br />Altitude: {p.altitude_m.toFixed(1)} m</>}
+                    {p.speed_mps != null && <><br />Speed: {p.speed_mps.toFixed(2)} m/s</>}
                   </Popup>
                 </CircleMarker>
               ))}
@@ -306,7 +433,6 @@ function PingMap({ pings, uploads, visibleUploadIds }: {
         })}
       </MapContainer>
 
-      {/* legend showing each turtle/sensor color */}
       {groups.length > 0 && (
         <div className="upload-map-legend">
           {groups.map((g) => (
@@ -321,8 +447,6 @@ function PingMap({ pings, uploads, visibleUploadIds }: {
     </div>
   );
 }
-
-// section going over data uploading
 
 export function UploadDataSection() {
   const [files, setFiles] = useState<File[]>([]);
@@ -353,7 +477,6 @@ export function UploadDataSection() {
       if (r.ok) {
         const data: UploadRecord[] = await r.json();
         setUploads(data);
-        // auto-show all uploads on map
         setVisibleUploadIds(new Set(data.map((u) => u.id)));
       }
     } catch {}
@@ -380,7 +503,6 @@ export function UploadDataSection() {
     return withGps;
   }, [storedPings, dateStart, dateEnd]);
 
-  // group uploads by filename (turtle name)
   const uploadsByTurtle = useMemo(() => {
     const map = new Map<string, UploadRecord[]>();
     for (const u of uploads) {
@@ -392,7 +514,6 @@ export function UploadDataSection() {
 
   const colorMap = useMemo(() => buildColorMap(uploads), [uploads]);
 
-  // shows a summary of the battery
   const batterySummary = useMemo(() => {
     const byFilename = new Map<string, { battPct: number; battV: number; uptimeMin: number; uploadIds: number[] }>();
     for (const p of storedPings) {
@@ -411,7 +532,6 @@ export function UploadDataSection() {
     return Array.from(byFilename.entries()).map(([filename, data]) => ({ filename, ...data }));
   }, [storedPings, uploads]);
 
-  // toggle a specific upload_id on the map
   const toggleUploadVisibility = (uploadId: number) => {
     setVisibleUploadIds((prev) => {
       const next = new Set(prev);
@@ -421,7 +541,6 @@ export function UploadDataSection() {
     });
   };
 
-  // toggle all uploads for a turtle (by filename)
   const toggleTurtleVisibility = (filename: string) => {
     const turtleUploads = uploads.filter((u) => u.filename === filename);
     const ids = turtleUploads.map((u) => u.id);
@@ -436,11 +555,13 @@ export function UploadDataSection() {
   const showAll = () => setVisibleUploadIds(new Set(uploads.map((u) => u.id)));
   const hideAll = () => setVisibleUploadIds(new Set());
 
-  // accepts multiple csv files
   const processFiles = useCallback((fileList: File[]) => {
     const csvFiles = fileList.filter((f) => f.name.toLowerCase().endsWith(".csv"));
     if (csvFiles.length === 0) {
-      setResult({ rows: [], totalRows: 0, gpsRows: 0, noGpsRows: 0, duplicateCount: 0, alreadyProcessed: false, error: "No valid .csv files found.", fileNames: [] });
+      setResult({
+        rows: [], totalRows: 0, gpsRows: 0, noGpsRows: 0, duplicateCount: 0,
+        alreadyProcessed: false, error: "No valid .csv files found.", fileNames: [],
+      });
       setFiles([]);
       return;
     }
@@ -460,7 +581,10 @@ export function UploadDataSection() {
         if (loaded === csvFiles.length) setResult(mergeResults(results));
       };
       reader.onerror = () => {
-        results.push({ rows: [], totalRows: 0, gpsRows: 0, noGpsRows: 0, duplicateCount: 0, alreadyProcessed: false, error: `Failed to read ${f.name}`, fileNames: [f.name] });
+        results.push({
+          rows: [], totalRows: 0, gpsRows: 0, noGpsRows: 0, duplicateCount: 0,
+          alreadyProcessed: false, error: `Failed to read ${f.name}`, fileNames: [f.name],
+        });
         loaded++;
         if (loaded === csvFiles.length) setResult(mergeResults(results));
       };
@@ -484,7 +608,8 @@ export function UploadDataSection() {
   const deselectAll = () => { if (!result) return; setResult({ ...result, rows: result.rows.map((r) => ({ ...r, selected: false })) }); };
 
   const handleClear = () => {
-    setFiles([]); setResult(null); setSubmitted(false); setSubmitResult(null); setSubmitError(null); setExpandedRow(null);
+    setFiles([]); setResult(null); setSubmitted(false); setSubmitResult(null);
+    setSubmitError(null); setExpandedRow(null);
     if (inputRef.current) inputRef.current.value = "";
   };
 
@@ -507,9 +632,18 @@ export function UploadDataSection() {
     try {
       for (const [fileName, rows] of byFile) {
         const payload = rows.map((r) => ({
-          uptime_min: r.uptimeMin, batt_v: r.battV, batt_pct: r.battPct,
-          fix_type: r.fixType, siv: r.siv, latitude: r.latitude, longitude: r.longitude,
-          surface_fix: r.surfaceFix, recorded_at: r.recordedAt,
+          uptime_min: r.uptimeMin,
+          batt_v: r.battV,
+          batt_pct: r.battPct,
+          fix_type: r.fixType,
+          siv: r.siv,
+          latitude: r.latitude,
+          longitude: r.longitude,
+          surface_fix: r.surfaceFix,
+          altitude_m: r.altitudeM,
+          h_acc_m: r.hAccM,
+          speed_mps: r.speedMps,
+          recorded_at: r.recordedAt,
         }));
         const res = await fetch(`${API_BASE}/api/pings/upload`, {
           method: "POST",
@@ -570,7 +704,6 @@ export function UploadDataSection() {
       const r = await fetch(`${API_BASE}/api/tracker-pings/${pingId}`, { method: "DELETE" });
       if (r.ok) {
         const data = await r.json();
-        // refresh the pings for that upload
         if (data.upload_id) fetchUploadPings(data.upload_id);
         fetchUploads();
         fetchStoredPings();
@@ -582,7 +715,7 @@ export function UploadDataSection() {
 
   return (
     <>
-      {/* timestamps */}
+      {/* upload start time */}
       <div className="upload-timestamp-row">
         <label className="upload-timestamp-label">
           Upload start time
@@ -591,11 +724,14 @@ export function UploadDataSection() {
         <input type="datetime-local" className="upload-timestamp-input" value={uploadTimestamp} onChange={(e) => setUploadTimestamp(e.target.value)} />
       </div>
 
-      {/* accepts multiple csv files */}
       <input type="file" accept=".csv" multiple ref={inputRef} style={{ display: "none" }} onChange={onFileChange} />
-      <div className={`csv-drop-zone ${highlight ? "highlight" : ""}`} onClick={onZoneClick}
+      <div
+        className={`csv-drop-zone ${highlight ? "highlight" : ""}`}
+        onClick={onZoneClick}
         onDrop={onDrop} onDragOver={onDragOver} onDragLeave={onDragLeave}
-        role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onZoneClick(); } }}>
+        role="button" tabIndex={0}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onZoneClick(); } }}
+      >
         {files.length > 0 ? (
           <>
             <div className="csv-drop-zone-main">{files.length} file{files.length !== 1 ? "s" : ""} selected</div>
@@ -610,7 +746,6 @@ export function UploadDataSection() {
         )}
       </div>
 
-      {/* banners */}
       {result?.error && <div className="upload-status-banner error"><span>✖</span> {result.error}</div>}
       {result?.alreadyProcessed && (
         <div className="upload-status-banner warning"><span>⚠</span> File appears already processed. Upload the original CSV from the tracker.</div>
@@ -624,7 +759,6 @@ export function UploadDataSection() {
             {result.duplicateCount > 0 && <> — {result.duplicateCount} duplicate{result.duplicateCount !== 1 ? "s" : ""}</>}
           </div>
 
-          {/* summary cards */}
           <div className="upload-summary-grid">
             <div className="upload-summary-card"><div className="upload-summary-number">{result.totalRows}</div><div className="upload-summary-label">Total Rows</div></div>
             <div className="upload-summary-card"><div className="upload-summary-number">{result.gpsRows}</div><div className="upload-summary-label">GPS Fixed</div></div>
@@ -632,7 +766,6 @@ export function UploadDataSection() {
             <div className="upload-summary-card"><div className="upload-summary-number">{selectedCount}</div><div className="upload-summary-label">Selected</div></div>
           </div>
 
-          {/* table controls */}
           <div className="upload-table-controls">
             <h3 className="upload-section-title" style={{ margin: 0 }}>CSV Data Preview</h3>
             <div className="upload-select-btns">
@@ -641,7 +774,6 @@ export function UploadDataSection() {
             </div>
           </div>
 
-          {/* removed Batt V and Batt % columns, added Source, click-to-expand */}
           <div className="upload-table-wrap">
             <div className="upload-table-scroll">
               <table className="upload-table">
@@ -663,8 +795,10 @@ export function UploadDataSection() {
                 <tbody>
                   {result.rows.map((row, i) => (
                     <React.Fragment key={i}>
-                      <tr className={`${row.isDuplicate ? "duplicate-row" : ""} ${!row.hasGps ? "no-gps-row" : ""} upload-row-clickable`}
-                        onClick={() => setExpandedRow(expandedRow === i ? null : i)}>
+                      <tr
+                        className={`${row.isDuplicate ? "duplicate-row" : ""} ${!row.hasGps ? "no-gps-row" : ""} upload-row-clickable`}
+                        onClick={() => setExpandedRow(expandedRow === i ? null : i)}
+                      >
                         <td onClick={(e) => e.stopPropagation()}>
                           <input type="checkbox" checked={row.selected} onChange={() => toggleRow(i)} disabled={row.isDuplicate} />
                         </td>
@@ -678,12 +812,13 @@ export function UploadDataSection() {
                         <td>{row.surfaceFix ? "Yes" : "No"}</td>
                         <td>{formatShortTime(row.recordedAt)}</td>
                         <td>
-                          {row.isDuplicate ? <span className="dup-badge">Duplicate</span>
-                            : row.hasGps ? <span style={{ color: "#2ecc71", fontWeight: 600, fontSize: "0.8rem" }}>GPS ✔</span>
+                          {row.isDuplicate
+                            ? <span className="dup-badge">Duplicate</span>
+                            : row.hasGps
+                            ? <span style={{ color: "#2ecc71", fontWeight: 600, fontSize: "0.8rem" }}>GPS ✔</span>
                             : <span style={{ color: "#f39c12", fontWeight: 600, fontSize: "0.8rem" }}>No GPS</span>}
                         </td>
                       </tr>
-                      {/* expandable detail row */}
                       {expandedRow === i && (
                         <tr className="upload-detail-row">
                           <td colSpan={result.fileNames.length > 1 ? 12 : 11}>
@@ -692,6 +827,9 @@ export function UploadDataSection() {
                               <div className="upload-detail-item"><span className="upload-detail-label">Battery</span><span className="upload-detail-value" style={{ color: battColor(row.battPct) }}>{row.battPct}%</span></div>
                               <div className="upload-detail-item"><span className="upload-detail-label">Full Timestamp</span><span className="upload-detail-value">{formatDate(row.recordedAt)}</span></div>
                               <div className="upload-detail-item"><span className="upload-detail-label">Source File</span><span className="upload-detail-value">{row.sourceFile}</span></div>
+                              {row.altitudeM !== null && <div className="upload-detail-item"><span className="upload-detail-label">Altitude</span><span className="upload-detail-value">{row.altitudeM.toFixed(1)} m</span></div>}
+                              {row.hAccM !== null && <div className="upload-detail-item"><span className="upload-detail-label">Horiz. Accuracy</span><span className="upload-detail-value">{row.hAccM.toFixed(2)} m</span></div>}
+                              {row.speedMps !== null && <div className="upload-detail-item"><span className="upload-detail-label">Speed</span><span className="upload-detail-value">{row.speedMps.toFixed(2)} m/s</span></div>}
                             </div>
                           </td>
                         </tr>
@@ -720,7 +858,6 @@ export function UploadDataSection() {
         </>
       )}
 
-      {/* shows a summary of the battery */}
       {batterySummary.length > 0 && (
         <>
           <h3 className="upload-section-title">Sensor Battery Status</h3>
@@ -741,7 +878,6 @@ export function UploadDataSection() {
         </>
       )}
 
-      {/* shows the map and the a selectable date range */}
       <h3 className="upload-section-title">Ping Map</h3>
 
       <div className="upload-date-range">
@@ -751,7 +887,6 @@ export function UploadDataSection() {
         <span className="upload-date-hint">{!dateStart && !dateEnd ? "Showing most recent pings" : `Showing ${mapPings.length} ping${mapPings.length !== 1 ? "s" : ""} in range`}</span>
       </div>
 
-      {/* turtle/sensor selector for map visibility */}
       {uploads.length > 0 && (
         <div className="upload-turtle-selector">
           <span className="upload-turtle-selector-label">Show on map:</span>
@@ -783,7 +918,6 @@ export function UploadDataSection() {
 
       <PingMap pings={mapPings} uploads={uploads} visibleUploadIds={visibleUploadIds} />
 
-      {/* makes each ping expandable for more info */}
       <h3 className="upload-section-title">Stored Pings</h3>
       {mapPings.filter((p) => visibleUploadIds.has(p.upload_id)).length === 0 ? (
         <div className="upload-status-banner info">No stored GPS pings{dateStart || dateEnd ? " in this date range" : " yet"}.</div>
@@ -814,6 +948,9 @@ export function UploadDataSection() {
                               <div className="upload-detail-item"><span className="upload-detail-label">Battery Voltage</span><span className="upload-detail-value">{p.batt_v.toFixed(3)} V</span></div>
                               <div className="upload-detail-item"><span className="upload-detail-label">Battery</span><span className="upload-detail-value" style={{ color: battColor(p.batt_pct) }}>{p.batt_pct}%</span></div>
                               <div className="upload-detail-item"><span className="upload-detail-label">Surface Fix</span><span className="upload-detail-value">{p.surface_fix ? "Yes" : "No"}</span></div>
+                              {p.altitude_m != null && <div className="upload-detail-item"><span className="upload-detail-label">Altitude</span><span className="upload-detail-value">{p.altitude_m.toFixed(1)} m</span></div>}
+                              {p.h_acc_m != null && <div className="upload-detail-item"><span className="upload-detail-label">Horiz. Accuracy</span><span className="upload-detail-value">{p.h_acc_m.toFixed(2)} m</span></div>}
+                              {p.speed_mps != null && <div className="upload-detail-item"><span className="upload-detail-label">Speed</span><span className="upload-detail-value">{p.speed_mps.toFixed(2)} m/s</span></div>}
                             </div>
                           </td>
                         </tr>
@@ -827,7 +964,6 @@ export function UploadDataSection() {
         </div>
       )}
 
-      {/* UPLOAD HISTORY — grouped by turtle, expandable, per-entry delete */}
       <h3 className="upload-section-title">Upload History</h3>
       {uploads.length === 0 ? (
         <div className="upload-status-banner info">No uploads yet.</div>
@@ -861,8 +997,7 @@ export function UploadDataSection() {
                               {u.duplicate_count > 0 && <span className="upload-history-entry-dupes">{u.duplicate_count} dupes skipped</span>}
                               <span className="upload-history-entry-date">{formatDate(u.uploaded_at)}</span>
                             </div>
-                            <button className="upload-btn-delete" onClick={() => handleDeleteUpload(u.id)} disabled={deleting === u.id}
-                              title="Delete entire upload session">
+                            <button className="upload-btn-delete" onClick={() => handleDeleteUpload(u.id)} disabled={deleting === u.id} title="Delete entire upload session">
                               {deleting === u.id ? "…" : "Delete All"}
                             </button>
                           </div>
@@ -903,14 +1038,17 @@ export default function DataPage() {
   return (
     <main className="upload-data-page">
       <div className="upload-hero">
-        <h1 className="heading1">Upload Tracker Data</h1>
-        <p className="bodytext">Import CSV files from your tracker's SD card to preview, map, and submit ping data.</p>
+        <Link to="/sensor" style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: "#0891B2", textDecoration: "none", fontWeight: 600, marginBottom: "1rem", fontSize: "0.95rem" }}>
+          ← Back to Sensors
+        </Link>
+        <h1 className="heading1">Add Sensor Data</h1>
+        <p className="bodytext">
+          Import CSV files from your tracker's SD card to preview, map, and submit ping data.
+          Each file corresponds to one sensor — the filename becomes the sensor label on the map.
+        </p>
       </div>
       <div className="container">
         <UploadDataSection />
-        <div className="upload-dev-note">
-          <strong>Dev note:</strong> This page is temporary. <code>&lt;UploadDataSection /&gt;</code> can be moved to the Sensor page later.
-        </div>
       </div>
     </main>
   );

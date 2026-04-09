@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import "../styles/pages/homepage.css";
 import "../styles/pages/infoSections.css";
@@ -14,11 +14,8 @@ export default function Homepage() {
     { name: "Isla Menor Cayo Bolívar", slug: "island-5" },
     { name: "Isla Menor Cayo Albuquerque", slug: "island-6" },
   ];
+
   const galleryImages: GalleryItem[] = [
-    /* {
-       src: "/images/turtle1.jpg",
-       alt: "Sea turtle swimming over coral reef",
-     },*/
     {
       src: "/images/turtle2.jpg",
       alt: "Sea turtle near the surface of shallow water",
@@ -36,6 +33,8 @@ export default function Homepage() {
       alt: "Sea turtle surfacing for air",
     },
   ];
+
+  // ── fade-title scroll animation ───────────────────────────────────────────
   useEffect(() => {
     const titles = document.querySelectorAll<HTMLElement>(".fade-title");
     let lastY = window.scrollY;
@@ -43,24 +42,16 @@ export default function Homepage() {
     const io = new IntersectionObserver(
       (entries) => {
         const dir = window.scrollY > lastY ? "down" : "up";
-
         entries.forEach((entry) => {
           const el = entry.target as HTMLElement;
-
           if (entry.isIntersecting) {
-            // entering viewport:
-            // scrolling down -> fade up (+12px)
-            // scrolling up -> fade down (-12px)
             el.style.setProperty("--from", dir === "down" ? "12px" : "-12px");
             el.classList.add("in-view");
           } else {
-            // leaving viewport:
-            // opposite -> fades out in the scroll direction
             el.style.setProperty("--from", dir === "down" ? "-12px" : "12px");
             el.classList.remove("in-view");
           }
         });
-
         lastY = window.scrollY;
       },
       { threshold: 0.25, rootMargin: "0px 0px -10% 0px" }
@@ -68,6 +59,63 @@ export default function Homepage() {
 
     titles.forEach((t) => io.observe(t));
     return () => io.disconnect();
+  }, []);
+
+  // ── island grid scroll-driven top fade ───────────────────────────────────
+  // The sticky header (.islands-sticky) sits at:
+  //   top: calc(--nav-h + 100px) = 80 + 100 = 180px from viewport top
+  // The header block itself is ~130px tall, so its bottom edge ≈ 310px.
+  // FADE_ZONE is the viewport-y where items should be fully transparent —
+  // i.e. the bottom of the sticky header. Items start fading as they scroll
+  // up into that zone, and are fully visible when below it.
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const grid = gridRef.current;
+    if (!grid) return;
+
+    // Read the actual sticky header bottom at runtime so it's always accurate
+    function getStickyBottom(): number {
+      const sticky = document.querySelector<HTMLElement>(".islands-sticky");
+      if (sticky) {
+        const r = sticky.getBoundingClientRect();
+        return r.bottom;
+      }
+      // fallback: nav-h(80) + 100 offset + ~130px header height
+      return 310;
+    }
+
+    function updateMask() {
+      if (!grid) return;
+      const gridTop = grid.getBoundingClientRect().top;
+      const fadeZone = getStickyBottom();
+
+      if (gridTop >= fadeZone) {
+        // Grid top is still below the header — fully visible, no mask
+        grid.style.webkitMaskImage = "";
+        grid.style.maskImage = "";
+        return;
+      }
+
+      // Items are scrolling up behind the header
+      // overlap = how far above fadeZone the grid top currently is
+      const overlap = fadeZone - gridTop;
+      // fade completes 80px below the overlap point
+      const fadeEnd = overlap + 80;
+
+      const mask = `linear-gradient(to bottom, transparent 0px, transparent ${overlap}px, black ${fadeEnd}px, black 100%)`;
+      grid.style.webkitMaskImage = mask;
+      grid.style.maskImage = mask;
+    }
+
+    window.addEventListener("scroll", updateMask, { passive: true });
+    // Also run on resize since the sticky header height can change
+    window.addEventListener("resize", updateMask, { passive: true });
+    updateMask();
+    return () => {
+      window.removeEventListener("scroll", updateMask);
+      window.removeEventListener("resize", updateMask);
+    };
   }, []);
 
   return (
@@ -81,8 +129,6 @@ export default function Homepage() {
             autoPlay={true}
             autoPlayMs={5000}
           />
-
-          {/* overlay text */}
           <div className="hero-gallery-text">
             <p className="heading1">SEAtech</p>
             <p className="bodytext">Technology powering marine conservation</p>
@@ -121,7 +167,6 @@ export default function Homepage() {
         </div>
       </section>
 
-
       {/* ===== islands ===== */}
       <section className="section islands parallax-block">
         <div className="parallax-media" aria-hidden />
@@ -135,7 +180,7 @@ export default function Homepage() {
             </Reveal>
           </div>
 
-          <div className="islands-grid">
+          <div className="islands-grid" ref={gridRef}>
             {islands.map((island) => (
               <Link key={island.slug} to={`/islands#${island.slug}`} className="tile-link">
                 <div className="island-tile">
