@@ -456,6 +456,9 @@ def get_all_tracker_pings():
             "longitude": p.longitude,
             "surface_fix": p.surface_fix,
             "recorded_at": p.recorded_at.isoformat() if p.recorded_at else None,
+            "altitude_m": p.altitude_m,
+            "h_acc_m": p.h_acc_m,
+            "speed_mps": p.speed_mps,
         }
         for p in pings
     ]), 200

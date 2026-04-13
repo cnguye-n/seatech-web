@@ -110,6 +110,13 @@ const SensorPage: React.FC = () => {
   const [search, setSearch] = useState("");
   const [openSensors, setOpenSensors] = useState<Set<string>>(new Set());
   const [zoomTarget, setZoomTarget] = useState<{ name: string; trigger: number } | null>(null);
+
+  // export state
+  const defaultDateFrom = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const defaultDateTo = new Date().toISOString().slice(0, 10);
+  const [exportFrom, setExportFrom] = useState(defaultDateFrom);
+  const [exportTo, setExportTo] = useState(defaultDateTo);
+  const [exportSensors, setExportSensors] = useState<Set<string>>(new Set(["__all__"]));
   const [visibleSensors, setVisibleSensors] = useState<Set<string>>(new Set());
 
   // deletion state
@@ -265,12 +272,76 @@ const SensorPage: React.FC = () => {
     .filter((p) => p.latitude != null && p.longitude != null)
     .map((p) => [p.latitude!, p.longitude!]);
 
+  const handleExport = () => {
+    const fromTs = new Date(exportFrom + "T00:00:00Z").getTime();
+    const toTs = new Date(exportTo + "T23:59:59Z").getTime();
+    const allSensors = exportSensors.has("__all__");
+
+    const filtered = pings.filter((p) => {
+      if (!p.recorded_at) return false;
+      const ts = new Date(p.recorded_at).getTime();
+      if (ts < fromTs || ts > toTs) return false;
+      const upload = uploads.find((u) => u.id === p.upload_id);
+      if (!upload) return false;
+      if (!allSensors && !exportSensors.has(upload.filename)) return false;
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      alert("No pings found for the selected filters.");
+      return;
+    }
+
+    const headers = ["sensor","turtle_name","recorded_at","uptime_min","latitude","longitude","altitude_m","h_acc_m","speed_mps","batt_v","batt_pct","fix_type","siv","surface_fix"];
+    const rows = filtered.map((p) => {
+      const upload = uploads.find((u) => u.id === p.upload_id);
+      const meta = upload ? metaByName.get(upload.filename) : null;
+      const val = (v: number | null | undefined) => v != null ? v : "";
+      return [
+        upload?.filename ?? "",
+        meta?.turtle_name ?? "",
+        p.recorded_at ?? "",
+        p.uptime_min,
+        val(p.latitude),
+        val(p.longitude),
+        val(p.altitude_m),
+        val(p.h_acc_m),
+        val(p.speed_mps),
+        p.batt_v,
+        p.batt_pct,
+        p.fix_type,
+        p.siv,
+        p.surface_fix,
+      ].map((v) => (typeof v === "string" && v.includes(",") ? `"${v}"` : v));
+    });
+
+    const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `seatech_export_${exportFrom}_to_${exportTo}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const toggleExportSensor = (name: string) => {
+    setExportSensors((prev) => {
+      const next = new Set(prev);
+      if (name === "__all__") return new Set(["__all__"]);
+      next.delete("__all__");
+      next.has(name) ? next.delete(name) : next.add(name);
+      if (next.size === 0) return new Set(["__all__"]);
+      return next;
+    });
+  };
+
   return (
     <>
       {/* HERO */}
       <main style={{ paddingTop: "2rem", paddingBottom: "1rem" }}>
         <div className="container">
-          <p className="heading1" style={{ marginBottom: "0.5rem" }}>Sensor Data</p>
+          <p className="heading1" style={{ marginBottom: "0.5rem" }}>Turtle Tracking</p>
           <p className="bodytext" style={{ color: "#5a8a8f", marginBottom: 0 }}>
             Real-time GPS tracking data from deployed RAK sensors. Click a sensor card to expand its details, or use the map to explore migration paths.
           </p>
@@ -663,6 +734,220 @@ const SensorPage: React.FC = () => {
               </div>
             </div>
           </section>
+          {/* ── EXPORT ── */}
+          {(() => {
+            const fromTs = new Date(exportFrom + "T00:00:00Z").getTime();
+            const toTs = new Date(exportTo + "T23:59:59Z").getTime();
+            const allSensors = exportSensors.has("__all__");
+            const previewPings = pings.filter((p) => {
+              if (!p.recorded_at) return false;
+              const ts = new Date(p.recorded_at).getTime();
+              if (ts < fromTs || ts > toTs) return false;
+              const upload = uploads.find((u) => u.id === p.upload_id);
+              if (!upload) return false;
+              if (!allSensors && !exportSensors.has(upload.filename)) return false;
+              return true;
+            }).sort((a, b) => new Date(a.recorded_at!).getTime() - new Date(b.recorded_at!).getTime());
+
+            return (
+              <section style={{ paddingTop: "1rem", paddingBottom: "1.5rem" }}>
+                <div className="container">
+                  <h3 className="upload-section-title">Export Data</h3>
+                  <p className="bodytext" style={{ marginBottom: "1.25rem", color: "#666", fontSize: "0.9rem" }}>
+                    Download ping data as a CSV. Filter by date range and sensor.
+                  </p>
+
+                  <div style={{ display: "flex", gap: "1.5rem", alignItems: "flex-start", flexWrap: "wrap" }}>
+
+                    {/* ── LEFT: controls ── */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "1rem", flex: "0 0 340px", minWidth: 260 }}>
+
+                      {/* date range */}
+                      <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "flex-end" }}>
+                        <label style={{ display: "flex", flexDirection: "column", gap: "0.3rem", fontSize: "0.82rem", fontWeight: 600, color: "#5a8a8f" }}>
+                          From
+                          <input
+                            type="date"
+                            value={exportFrom}
+                            onChange={(e) => setExportFrom(e.target.value)}
+                            style={{ padding: "0.5rem 0.75rem", borderRadius: 8, border: "1.5px solid rgba(0,109,119,0.25)", fontSize: "0.88rem", color: "#2d4a4d", outline: "none" }}
+                          />
+                        </label>
+                        <label style={{ display: "flex", flexDirection: "column", gap: "0.3rem", fontSize: "0.82rem", fontWeight: 600, color: "#5a8a8f" }}>
+                          To
+                          <input
+                            type="date"
+                            value={exportTo}
+                            onChange={(e) => setExportTo(e.target.value)}
+                            style={{ padding: "0.5rem 0.75rem", borderRadius: 8, border: "1.5px solid rgba(0,109,119,0.25)", fontSize: "0.88rem", color: "#2d4a4d", outline: "none" }}
+                          />
+                        </label>
+                      </div>
+
+                      {/* sensor selector */}
+                      <div>
+                        <p style={{ fontSize: "0.82rem", fontWeight: 600, color: "#5a8a8f", marginBottom: "0.5rem" }}>Sensors</p>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+                          <button
+                            onClick={() => setExportSensors(new Set(["__all__"]))}
+                            style={{
+                              padding: "0.35rem 0.85rem", fontSize: "0.78rem", fontWeight: 600,
+                              borderRadius: 8, cursor: "pointer", transition: "all 0.15s ease",
+                              border: `1.5px solid ${exportSensors.has("__all__") ? "#006d77" : "rgba(0,109,119,0.25)"}`,
+                              background: exportSensors.has("__all__") ? "#006d77" : "transparent",
+                              color: exportSensors.has("__all__") ? "#fff" : "#5a8a8f",
+                            }}
+                          >
+                            All sensors
+                          </button>
+                          {sensorNames.map((name) => {
+                            const meta = metaByName.get(name);
+                            const label = meta?.turtle_name || name;
+                            const cidx = colorMap.get(name) ?? 0;
+                            const color = getColor(cidx);
+                            const selected = exportSensors.has(name) && !exportSensors.has("__all__");
+                            return (
+                              <button
+                                key={name}
+                                onClick={() => toggleExportSensor(name)}
+                                style={{
+                                  padding: "0.35rem 0.85rem", fontSize: "0.78rem", fontWeight: 600,
+                                  borderRadius: 8, cursor: "pointer", transition: "all 0.15s ease",
+                                  border: `1.5px solid ${selected ? color.stroke : "rgba(0,109,119,0.2)"}`,
+                                  background: selected ? color.stroke : "transparent",
+                                  color: selected ? "#fff" : "#5a8a8f",
+                                }}
+                              >
+                                {label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* download button */}
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                        <button
+                          onClick={handleExport}
+                          style={{
+                            padding: "0.6rem 1.5rem", fontSize: "0.88rem", fontWeight: 700,
+                            borderRadius: 10, border: "none", background: "#006d77", color: "#fff",
+                            cursor: "pointer", transition: "background 0.18s ease",
+                          }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#005a63"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#006d77"; }}
+                        >
+                          Download CSV
+                        </button>
+                        <span style={{ fontSize: "0.78rem", color: "#8aa8ab" }}>
+                          {previewPings.length} ping{previewPings.length !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+
+                    </div>
+
+                    {/* ── RIGHT: scrollable preview ── */}
+                    <div style={{ flex: 1, minWidth: 280 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "0.5rem" }}>
+                        <p style={{ fontSize: "0.82rem", fontWeight: 600, color: "#5a8a8f", margin: 0 }}>Preview</p>
+                        <span style={{ fontSize: "0.75rem", color: "#aac8cb" }}>{previewPings.length} rows</span>
+                      </div>
+                      <div style={{
+                        border: "1.5px solid rgba(131,197,190,0.35)",
+                        borderRadius: 12,
+                        overflow: "hidden",
+                        background: "#fff",
+                      }}>
+                        {/* header row */}
+                        <div style={{
+                          display: "grid",
+                          gridTemplateColumns: "2fr 1.4fr 0.9fr 0.9fr 0.7fr 0.7fr 0.7fr 0.7fr 0.7fr",
+                          padding: "0.5rem 0.75rem",
+                          background: "rgba(131,197,190,0.1)",
+                          borderBottom: "1px solid rgba(131,197,190,0.3)",
+                          fontSize: "0.68rem",
+                          fontWeight: 700,
+                          color: "#5a8a8f",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                          gap: "0.4rem",
+                        }}>
+                          <span>Sensor</span>
+                          <span>Time</span>
+                          <span>Lat</span>
+                          <span>Lon</span>
+                          <span>Batt</span>
+                          <span>Fix</span>
+                          <span>Alt (m)</span>
+                          <span>H.Acc</span>
+                          <span>Spd</span>
+                        </div>
+                        {/* scrollable rows */}
+                        <div style={{ maxHeight: 320, overflowY: "auto" }}>
+                          {previewPings.length === 0 ? (
+                            <div style={{ padding: "2rem 1rem", textAlign: "center", color: "#aac8cb", fontSize: "0.85rem" }}>
+                              No pings match the current filters
+                            </div>
+                          ) : (
+                            previewPings.map((p, i) => {
+                              const upload = uploads.find((u) => u.id === p.upload_id);
+                              const meta = upload ? metaByName.get(upload.filename) : null;
+                              const label = meta?.turtle_name || upload?.filename || "—";
+                              const cidx = colorMap.get(upload?.filename ?? "") ?? 0;
+                              const color = getColor(cidx);
+                              return (
+                                <div
+                                  key={p.id}
+                                  style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "2fr 1.4fr 0.9fr 0.9fr 0.7fr 0.7fr 0.7fr 0.7fr 0.7fr",
+                                    padding: "0.45rem 0.75rem",
+                                    borderBottom: i < previewPings.length - 1 ? "1px solid rgba(131,197,190,0.15)" : "none",
+                                    fontSize: "0.76rem",
+                                    color: "#2d4a4d",
+                                    background: i % 2 === 0 ? "#fff" : "rgba(131,197,190,0.03)",
+                                    gap: "0.4rem",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <span style={{ display: "flex", alignItems: "center", gap: "0.4rem", overflow: "hidden" }}>
+                                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: color.stroke, flexShrink: 0 }} />
+                                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: color.stroke, fontWeight: 600 }}>{label}</span>
+                                  </span>
+                                  <span style={{ color: "#8aa8ab", fontSize: "0.72rem" }}>{formatShortTime(p.recorded_at)}</span>
+                                  <span>{p.latitude != null ? p.latitude.toFixed(4) : "—"}</span>
+                                  <span>{p.longitude != null ? p.longitude.toFixed(4) : "—"}</span>
+                                  <span style={{ color: battColor(p.batt_pct), fontWeight: 600 }}>{p.batt_pct}%</span>
+                                  <span>
+                                    <span style={{
+                                      display: "inline-block",
+                                      padding: "0.1rem 0.35rem",
+                                      borderRadius: 4,
+                                      fontSize: "0.68rem",
+                                      fontWeight: 700,
+                                      background: p.fix_type >= 2 ? "rgba(46,204,113,0.12)" : "rgba(180,180,180,0.15)",
+                                      color: p.fix_type >= 2 ? "#2ecc71" : "#aaa",
+                                    }}>
+                                      {p.fix_type >= 2 ? `${p.fix_type}D` : "—"}
+                                    </span>
+                                  </span>
+                                  <span style={{ color: "#5a8a8f" }}>{p.altitude_m != null ? p.altitude_m.toFixed(1) : "—"}</span>
+                                  <span style={{ color: "#5a8a8f" }}>{p.h_acc_m != null ? p.h_acc_m.toFixed(2) : "—"}</span>
+                                  <span style={{ color: "#5a8a8f" }}>{p.speed_mps != null ? p.speed_mps.toFixed(2) : "—"}</span>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </section>
+            );
+          })()}
+
         </>
       )}
 
