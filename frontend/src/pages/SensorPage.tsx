@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import "../styles/pages/sensors.css";
 import "../styles/pages/DataPage.css";
 import {
@@ -41,6 +42,9 @@ type StoredPing = {
   altitude_m: number | null;
   h_acc_m: number | null;
   speed_mps: number | null;
+  salinity_psu: number | null;
+  salinity_source: string | null;
+  salinity_timestamp: string | null;
 };
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -99,6 +103,119 @@ function ZoomToSensor({ coords, trigger }: { coords: [number, number][]; trigger
     map.fitBounds(L.latLngBounds(coords), { padding: [60, 60], animate: true });
   }, [trigger]);
   return null;
+}
+
+// ─── Salinity info badge (ⓘ hover tooltip) ────────────────────────────────────
+// Uses a React portal so the tooltip renders at document.body level,
+// escaping any parent overflow:hidden clipping from the sensor card.
+
+function SalinityBadge({ source, timestamp }: { source: string | null; timestamp: string | null }) {
+  const [show, setShow] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const btnRef = useRef<HTMLSpanElement>(null);
+
+  if (!source) return null;
+
+  const isClimatology = source === "WOA23 Climatology";
+  const label = source === "NASA/SMAP"
+    ? "NASA SMAP satellite (JPL, near real-time)"
+    : source === "SMOS/ESA"
+    ? "ESA SMOS satellite (NOAA/ERDDAP, near real-time)"
+    : source === "Argo/Argovis"
+    ? "Argo profiling float (in-situ measurement)"
+    : source === "WOA23 Climatology"
+    ? "World Ocean Atlas 2023 (long-term average)"
+    : source;
+
+  const measuredStr = isClimatology
+    ? "Long-term annual mean — not a real-time reading"
+    : timestamp ? formatDate(timestamp) : "Unknown";
+
+  const handleMouseEnter = () => {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      // Position tooltip above the badge, centered horizontally
+      // but clamped so it never goes off the right edge of the viewport
+      const tooltipWidth = 260;
+      const rawLeft = rect.left + rect.width / 2 - tooltipWidth / 2;
+      const clampedLeft = Math.min(rawLeft, window.innerWidth - tooltipWidth - 12);
+      setPos({
+        top: rect.top + window.scrollY - 8,   // 8px gap above badge
+        left: Math.max(12, clampedLeft),
+      });
+    }
+    setShow(true);
+  };
+
+  const tooltip = show ? (
+    <div
+      className={`salinity-tooltip-portal ${isClimatology ? "salinity-tooltip-portal--climo" : ""}`}
+      style={{ top: pos.top, left: pos.left }}
+      onMouseLeave={() => setShow(false)}
+    >
+      <div><strong>Source:</strong> {label}</div>
+      <div><strong>{isClimatology ? 'Note' : 'Measured'}:</strong> {measuredStr}</div>
+      {isClimatology && (
+        <div className="salinity-tooltip-climo-note">
+          ⚠ Climatological average — no real-time data available at this location
+        </div>
+      )}
+    </div>
+  ) : null;
+
+  return (
+    <>
+      <span
+        ref={btnRef}
+        className={`salinity-info-btn ${isClimatology ? "salinity-info-btn--climo" : ""}`}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={() => setShow(false)}
+        onClick={(e) => { e.stopPropagation(); setShow((v) => !v); }}
+        style={{ marginLeft: 5 }}
+      >
+        ⓘ
+      </span>
+      {typeof document !== "undefined" && createPortal(tooltip, document.body)}
+    </>
+  );
+}
+
+// ─── Popup content for a single map ping ──────────────────────────────────────
+
+function PingPopupContent({ ping, label }: { ping: StoredPing; label: string }) {
+  return (
+    <div className="ping-popup">
+      <strong>{label}</strong>
+      <div className="ping-popup-time">{formatDate(ping.recorded_at)}</div>
+      <div className="ping-popup-grid">
+        <span>📍 Lat</span><span>{ping.latitude!.toFixed(6)}</span>
+        <span>📍 Lon</span><span>{ping.longitude!.toFixed(6)}</span>
+        <span>🔋 Battery</span><span style={{ color: battColor(ping.batt_pct) }}>{ping.batt_pct}% · {ping.batt_v.toFixed(3)} V</span>
+        <span>📡 Fix</span><span>{ping.fix_type >= 2 ? `${ping.fix_type}D` : "No fix"}</span>
+        <span>🛰 SIV</span><span>{ping.siv >= 0 ? ping.siv : "—"}</span>
+        <span>🌊 Surface</span><span>{ping.surface_fix ? "Yes" : "No"}</span>
+        {ping.altitude_m != null && <><span>⬆ Altitude</span><span>{ping.altitude_m.toFixed(1)} m</span></>}
+        {ping.h_acc_m != null && <><span>🎯 H.Acc</span><span>{ping.h_acc_m.toFixed(2)} m</span></>}
+        {ping.speed_mps != null && <><span>💨 Speed</span><span>{ping.speed_mps.toFixed(3)} m/s</span></>}
+        <span>🧂 Salinity</span>
+        <span>
+          {ping.salinity_psu != null ? (
+            <>
+              {ping.salinity_psu.toFixed(3)} PSU
+              {ping.salinity_source && (
+                <span
+                  className="salinity-info-btn popup-info-btn"
+                  title={`Source: ${ping.salinity_source} | Measured: ${ping.salinity_timestamp ? formatDate(ping.salinity_timestamp) : "Unknown"}`}
+                >
+                  ⓘ
+                </span>
+              )}
+            </>
+          ) : "—"}
+        </span>
+      </div>
+    </div>
+  );
 }
 
 // ─── main ─────────────────────────────────────────────────────────────────────
@@ -292,7 +409,12 @@ const SensorPage: React.FC = () => {
       return;
     }
 
-    const headers = ["sensor","turtle_name","recorded_at","uptime_min","latitude","longitude","altitude_m","h_acc_m","speed_mps","batt_v","batt_pct","fix_type","siv","surface_fix"];
+    const headers = [
+      "sensor", "turtle_name", "recorded_at", "uptime_min",
+      "latitude", "longitude", "altitude_m", "h_acc_m", "speed_mps",
+      "batt_v", "batt_pct", "fix_type", "siv", "surface_fix",
+      "salinity_psu", "salinity_source",
+    ];
     const rows = filtered.map((p) => {
       const upload = uploads.find((u) => u.id === p.upload_id);
       const meta = upload ? metaByName.get(upload.filename) : null;
@@ -312,6 +434,8 @@ const SensorPage: React.FC = () => {
         p.fix_type,
         p.siv,
         p.surface_fix,
+        val(p.salinity_psu),
+        p.salinity_source ?? "",
       ].map((v) => (typeof v === "string" && v.includes(",") ? `"${v}"` : v));
     });
 
@@ -453,6 +577,25 @@ const SensorPage: React.FC = () => {
                                 {batt.altitude_m != null && <><span className="bodytext" style={{ color: "#888", fontSize: "0.82rem" }}>Altitude</span><span className="bodytext">{batt.altitude_m.toFixed(1)} m</span></>}
                                 {batt.h_acc_m != null && <><span className="bodytext" style={{ color: "#888", fontSize: "0.82rem" }}>H. accuracy</span><span className="bodytext">{batt.h_acc_m.toFixed(2)} m</span></>}
                                 {batt.speed_mps != null && <><span className="bodytext" style={{ color: "#888", fontSize: "0.82rem" }}>Speed</span><span className="bodytext">{batt.speed_mps.toFixed(3)} m/s</span></>}
+
+                                {/* ── Salinity row ── */}
+                                <span className="bodytext" style={{ color: "#888", fontSize: "0.82rem" }}>Salinity</span>
+                                <span className="bodytext" style={{ display: "flex", alignItems: "center", gap: 2 }}>
+                                  {batt.salinity_psu != null
+                                    ? (
+                                      <>
+                                        <span style={{ color: batt.salinity_source === "WOA23 Climatology" ? "#888" : undefined, fontStyle: batt.salinity_source === "WOA23 Climatology" ? "italic" : undefined }}>
+                                          {batt.salinity_psu.toFixed(3)} PSU
+                                        </span>
+                                        {batt.salinity_source === "WOA23 Climatology" && (
+                                          <span style={{ fontSize: "0.7rem", color: "#aaa", marginLeft: 3 }}>(avg)</span>
+                                        )}
+                                        <SalinityBadge source={batt.salinity_source} timestamp={batt.salinity_timestamp} />
+                                      </>
+                                    )
+                                    : <span style={{ color: "#aaa" }}>— (no GPS fix or data unavailable)</span>
+                                  }
+                                </span>
                               </div>
                             </>
                           ) : (
@@ -484,9 +627,7 @@ const SensorPage: React.FC = () => {
                                     const u = uploads.find((u) => u.id === p.upload_id);
                                     return u?.filename === name && p.latitude != null && p.longitude != null;
                                   });
-                                  if (sensorPings.length > 0) {
-                                    setZoomTarget({ name, trigger: Date.now() });
-                                  }
+                                  if (sensorPings.length > 0) setZoomTarget({ name, trigger: Date.now() });
                                 }}
                                 style={{
                                   padding: "0.35rem 0.85rem",
@@ -521,7 +662,7 @@ const SensorPage: React.FC = () => {
               <div style={{ marginBottom: "0.75rem" }}>
                 <p className="heading2" style={{ margin: 0, color: "#006d77" }}>Migration Paths</p>
                 <p className="bodytext" style={{ margin: "0.25rem 0 0", color: "#5a8a8f", fontSize: "0.9rem" }}>
-                  GPS tracks plotted from uploaded sensor data. Each color represents a different turtle.
+                  GPS tracks plotted from uploaded sensor data. Each color represents a different turtle. Click any dot for full ping details.
                 </p>
               </div>
               <div className="upload-map-wrap">
@@ -565,20 +706,23 @@ const SensorPage: React.FC = () => {
                         <React.Fragment key={group.name}>
                           <Polyline positions={gc} pathOptions={{ color: group.color.stroke, weight: 3, opacity: 0.8 }} />
                           {group.pings.map((p, i) => (
-                            <CircleMarker key={p.id} center={[p.latitude!, p.longitude!]} radius={6}
-                              pathOptions={{ color: group.color.stroke, fillColor: group.color.fill, fillOpacity: 0.9, weight: 2 }}>
+                            <CircleMarker
+                              key={p.id}
+                              center={[p.latitude!, p.longitude!]}
+                              radius={6}
+                              pathOptions={{ color: group.color.stroke, fillColor: group.color.fill, fillOpacity: 0.9, weight: 2 }}
+                            >
+                              {/* Hover tooltip — lightweight */}
                               <Tooltip direction="top" offset={[0, -8]}>
                                 <span style={{ fontWeight: 600 }}>{label}</span><br />
-                                Ping #{i + 1}<br />
-                                {p.latitude!.toFixed(6)}, {p.longitude!.toFixed(6)}<br />
-                                {formatShortTime(p.recorded_at)}
+                                Ping #{i + 1} · {formatShortTime(p.recorded_at)}<br />
+                                {p.latitude!.toFixed(5)}, {p.longitude!.toFixed(5)}
+                                {p.salinity_psu != null && <><br />🧂 {p.salinity_psu.toFixed(3)} PSU</>}
                               </Tooltip>
-                              <Popup>
-                                <strong>{label}</strong> — Ping #{i + 1}<br />
-                                Lat: {p.latitude!.toFixed(6)}<br />Lon: {p.longitude!.toFixed(6)}<br />
-                                Time: {formatDate(p.recorded_at)}<br />Battery: {p.batt_pct}%
-                                {p.altitude_m != null && <><br />Altitude: {p.altitude_m.toFixed(1)} m</>}
-                                {p.speed_mps != null && <><br />Speed: {p.speed_mps.toFixed(2)} m/s</>}
+
+                              {/* Click popup — full data */}
+                              <Popup minWidth={220}>
+                                <PingPopupContent ping={p} label={`${label} — Ping #${i + 1}`} />
                               </Popup>
                             </CircleMarker>
                           ))}
@@ -631,7 +775,7 @@ const SensorPage: React.FC = () => {
             </section>
           )}
 
-          {/* ── UPLOAD HISTORY + DELETION ── */}
+          {/* UPLOAD HISTORY */}
           <section className="section">
             <div className="container">
               <h3 className="upload-section-title">Upload History &amp; Data Management</h3>
@@ -651,9 +795,11 @@ const SensorPage: React.FC = () => {
                   return (
                     <div className="upload-history-turtle" key={filename}>
                       <div className="upload-history-turtle-header" onClick={() => setExpandedTurtle(isExpanded ? null : filename)}>
-                        <span className="upload-history-turtle-dot" style={{ background: color.fill, borderColor: color.stroke }} />
-                        <span className="upload-history-turtle-name">{displayName}</span>
-                        {displayName !== filename && <span className="upload-history-turtle-meta" style={{ color: "#999", fontSize: "0.8rem" }}>{filename}</span>}
+                        <span className="upload-history-turtle-name-cell">
+                          <span className="upload-history-turtle-dot" style={{ background: color.fill, borderColor: color.stroke }} />
+                          <span className="upload-history-turtle-name">{displayName}</span>
+                        </span>
+                        <span className="upload-history-turtle-filename">{displayName !== filename ? filename : ""}</span>
                         <span className="upload-history-turtle-meta">{turtleUploads.length} session{turtleUploads.length !== 1 ? "s" : ""} · {totalPings} pings</span>
                         <span className={`upload-history-chevron ${isExpanded ? "open" : ""}`}>▸</span>
                       </div>
@@ -691,7 +837,10 @@ const SensorPage: React.FC = () => {
                                       pingsForUpload.map((p, pi) => (
                                         <div className="upload-history-ping-row" key={p.id} style={{ flexDirection: "column", alignItems: "flex-start", gap: "0.4rem", padding: "0.6rem 0.75rem" }}>
                                           <div style={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center" }}>
-                                            <span className="upload-history-ping-num" style={{ fontWeight: 700 }}>#{pi + 1} &nbsp;<span style={{ color: "#999", fontWeight: 400, fontSize: "0.8rem" }}>{formatDate(p.recorded_at)}</span></span>
+                                            <span className="upload-history-ping-num" style={{ fontWeight: 700 }}>
+                                              #{pi + 1} &nbsp;
+                                              <span style={{ color: "#999", fontWeight: 400, fontSize: "0.8rem" }}>{formatDate(p.recorded_at)}</span>
+                                            </span>
                                             <button
                                               className="upload-btn-delete-sm"
                                               onClick={() => handleDeletePing(p.id)}
@@ -717,6 +866,15 @@ const SensorPage: React.FC = () => {
                                             {p.altitude_m != null && <><span style={{ color: "#888" }}>Altitude</span><span>{p.altitude_m.toFixed(1)} m</span></>}
                                             {p.h_acc_m != null && <><span style={{ color: "#888" }}>H. accuracy</span><span>{p.h_acc_m.toFixed(2)} m</span></>}
                                             {p.speed_mps != null && <><span style={{ color: "#888" }}>Speed</span><span>{p.speed_mps.toFixed(3)} m/s</span></>}
+
+                                            {/* Salinity in history */}
+                                            <span style={{ color: "#888" }}>Salinity</span>
+                                            <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                                              {p.salinity_psu != null
+                                                ? <>{p.salinity_psu.toFixed(3)} PSU <SalinityBadge source={p.salinity_source} timestamp={p.salinity_timestamp} /></>
+                                                : <span style={{ color: "#aaa" }}>—</span>
+                                              }
+                                            </span>
                                           </div>
                                         </div>
                                       ))
@@ -734,7 +892,8 @@ const SensorPage: React.FC = () => {
               </div>
             </div>
           </section>
-          {/* ── EXPORT ── */}
+
+          {/* EXPORT */}
           {(() => {
             const fromTs = new Date(exportFrom + "T00:00:00Z").getTime();
             const toTs = new Date(exportTo + "T23:59:59Z").getTime();
@@ -754,49 +913,30 @@ const SensorPage: React.FC = () => {
                 <div className="container">
                   <h3 className="upload-section-title">Export Data</h3>
                   <p className="bodytext" style={{ marginBottom: "1.25rem", color: "#666", fontSize: "0.9rem" }}>
-                    Download ping data as a CSV. Filter by date range and sensor.
+                    Download ping data as a CSV. Filter by date range and sensor. Salinity data is included.
                   </p>
 
                   <div style={{ display: "flex", gap: "1.5rem", alignItems: "flex-start", flexWrap: "wrap" }}>
 
-                    {/* ── LEFT: controls ── */}
+                    {/* LEFT: controls */}
                     <div style={{ display: "flex", flexDirection: "column", gap: "1rem", flex: "0 0 340px", minWidth: 260 }}>
-
-                      {/* date range */}
                       <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "flex-end" }}>
                         <label style={{ display: "flex", flexDirection: "column", gap: "0.3rem", fontSize: "0.82rem", fontWeight: 600, color: "#5a8a8f" }}>
                           From
-                          <input
-                            type="date"
-                            value={exportFrom}
-                            onChange={(e) => setExportFrom(e.target.value)}
-                            style={{ padding: "0.5rem 0.75rem", borderRadius: 8, border: "1.5px solid rgba(0,109,119,0.25)", fontSize: "0.88rem", color: "#2d4a4d", outline: "none" }}
-                          />
+                          <input type="date" value={exportFrom} onChange={(e) => setExportFrom(e.target.value)} style={{ padding: "0.5rem 0.75rem", borderRadius: 8, border: "1.5px solid rgba(0,109,119,0.25)", fontSize: "0.88rem", color: "#2d4a4d", outline: "none" }} />
                         </label>
                         <label style={{ display: "flex", flexDirection: "column", gap: "0.3rem", fontSize: "0.82rem", fontWeight: 600, color: "#5a8a8f" }}>
                           To
-                          <input
-                            type="date"
-                            value={exportTo}
-                            onChange={(e) => setExportTo(e.target.value)}
-                            style={{ padding: "0.5rem 0.75rem", borderRadius: 8, border: "1.5px solid rgba(0,109,119,0.25)", fontSize: "0.88rem", color: "#2d4a4d", outline: "none" }}
-                          />
+                          <input type="date" value={exportTo} onChange={(e) => setExportTo(e.target.value)} style={{ padding: "0.5rem 0.75rem", borderRadius: 8, border: "1.5px solid rgba(0,109,119,0.25)", fontSize: "0.88rem", color: "#2d4a4d", outline: "none" }} />
                         </label>
                       </div>
 
-                      {/* sensor selector */}
                       <div>
                         <p style={{ fontSize: "0.82rem", fontWeight: 600, color: "#5a8a8f", marginBottom: "0.5rem" }}>Sensors</p>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
                           <button
                             onClick={() => setExportSensors(new Set(["__all__"]))}
-                            style={{
-                              padding: "0.35rem 0.85rem", fontSize: "0.78rem", fontWeight: 600,
-                              borderRadius: 8, cursor: "pointer", transition: "all 0.15s ease",
-                              border: `1.5px solid ${exportSensors.has("__all__") ? "#006d77" : "rgba(0,109,119,0.25)"}`,
-                              background: exportSensors.has("__all__") ? "#006d77" : "transparent",
-                              color: exportSensors.has("__all__") ? "#fff" : "#5a8a8f",
-                            }}
+                            style={{ padding: "0.35rem 0.85rem", fontSize: "0.78rem", fontWeight: 600, borderRadius: 8, cursor: "pointer", transition: "all 0.15s ease", border: `1.5px solid ${exportSensors.has("__all__") ? "#006d77" : "rgba(0,109,119,0.25)"}`, background: exportSensors.has("__all__") ? "#006d77" : "transparent", color: exportSensors.has("__all__") ? "#fff" : "#5a8a8f" }}
                           >
                             All sensors
                           </button>
@@ -807,17 +947,7 @@ const SensorPage: React.FC = () => {
                             const color = getColor(cidx);
                             const selected = exportSensors.has(name) && !exportSensors.has("__all__");
                             return (
-                              <button
-                                key={name}
-                                onClick={() => toggleExportSensor(name)}
-                                style={{
-                                  padding: "0.35rem 0.85rem", fontSize: "0.78rem", fontWeight: 600,
-                                  borderRadius: 8, cursor: "pointer", transition: "all 0.15s ease",
-                                  border: `1.5px solid ${selected ? color.stroke : "rgba(0,109,119,0.2)"}`,
-                                  background: selected ? color.stroke : "transparent",
-                                  color: selected ? "#fff" : "#5a8a8f",
-                                }}
-                              >
+                              <button key={name} onClick={() => toggleExportSensor(name)} style={{ padding: "0.35rem 0.85rem", fontSize: "0.78rem", fontWeight: 600, borderRadius: 8, cursor: "pointer", transition: "all 0.15s ease", border: `1.5px solid ${selected ? color.stroke : "rgba(0,109,119,0.2)"}`, background: selected ? color.stroke : "transparent", color: selected ? "#fff" : "#5a8a8f" }}>
                                 {label}
                               </button>
                             );
@@ -825,15 +955,10 @@ const SensorPage: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* download button */}
                       <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                         <button
                           onClick={handleExport}
-                          style={{
-                            padding: "0.6rem 1.5rem", fontSize: "0.88rem", fontWeight: 700,
-                            borderRadius: 10, border: "none", background: "#006d77", color: "#fff",
-                            cursor: "pointer", transition: "background 0.18s ease",
-                          }}
+                          style={{ padding: "0.6rem 1.5rem", fontSize: "0.88rem", fontWeight: 700, borderRadius: 10, border: "none", background: "#006d77", color: "#fff", cursor: "pointer", transition: "background 0.18s ease" }}
                           onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#005a63"; }}
                           onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#006d77"; }}
                         >
@@ -843,35 +968,17 @@ const SensorPage: React.FC = () => {
                           {previewPings.length} ping{previewPings.length !== 1 ? "s" : ""}
                         </span>
                       </div>
-
                     </div>
 
-                    {/* ── RIGHT: scrollable preview ── */}
+                    {/* RIGHT: scrollable preview */}
                     <div style={{ flex: 1, minWidth: 280 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "0.5rem" }}>
                         <p style={{ fontSize: "0.82rem", fontWeight: 600, color: "#5a8a8f", margin: 0 }}>Preview</p>
                         <span style={{ fontSize: "0.75rem", color: "#aac8cb" }}>{previewPings.length} rows</span>
                       </div>
-                      <div style={{
-                        border: "1.5px solid rgba(131,197,190,0.35)",
-                        borderRadius: 12,
-                        overflow: "hidden",
-                        background: "#fff",
-                      }}>
-                        {/* header row */}
-                        <div style={{
-                          display: "grid",
-                          gridTemplateColumns: "2fr 1.4fr 0.9fr 0.9fr 0.7fr 0.7fr 0.7fr 0.7fr 0.7fr",
-                          padding: "0.5rem 0.75rem",
-                          background: "rgba(131,197,190,0.1)",
-                          borderBottom: "1px solid rgba(131,197,190,0.3)",
-                          fontSize: "0.68rem",
-                          fontWeight: 700,
-                          color: "#5a8a8f",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
-                          gap: "0.4rem",
-                        }}>
+                      <div style={{ border: "1.5px solid rgba(131,197,190,0.35)", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
+                        {/* header */}
+                        <div style={{ display: "grid", gridTemplateColumns: "2fr 1.4fr 0.9fr 0.9fr 0.7fr 0.7fr 0.7fr 0.7fr 0.7fr 0.9fr", padding: "0.5rem 0.75rem", background: "rgba(131,197,190,0.1)", borderBottom: "1px solid rgba(131,197,190,0.3)", fontSize: "0.68rem", fontWeight: 700, color: "#5a8a8f", textTransform: "uppercase", letterSpacing: "0.05em", gap: "0.4rem" }}>
                           <span>Sensor</span>
                           <span>Time</span>
                           <span>Lat</span>
@@ -881,8 +988,9 @@ const SensorPage: React.FC = () => {
                           <span>Alt (m)</span>
                           <span>H.Acc</span>
                           <span>Spd</span>
+                          <span>Sal (PSU)</span>
                         </div>
-                        {/* scrollable rows */}
+                        {/* rows */}
                         <div style={{ maxHeight: 320, overflowY: "auto" }}>
                           {previewPings.length === 0 ? (
                             <div style={{ padding: "2rem 1rem", textAlign: "center", color: "#aac8cb", fontSize: "0.85rem" }}>
@@ -896,20 +1004,7 @@ const SensorPage: React.FC = () => {
                               const cidx = colorMap.get(upload?.filename ?? "") ?? 0;
                               const color = getColor(cidx);
                               return (
-                                <div
-                                  key={p.id}
-                                  style={{
-                                    display: "grid",
-                                    gridTemplateColumns: "2fr 1.4fr 0.9fr 0.9fr 0.7fr 0.7fr 0.7fr 0.7fr 0.7fr",
-                                    padding: "0.45rem 0.75rem",
-                                    borderBottom: i < previewPings.length - 1 ? "1px solid rgba(131,197,190,0.15)" : "none",
-                                    fontSize: "0.76rem",
-                                    color: "#2d4a4d",
-                                    background: i % 2 === 0 ? "#fff" : "rgba(131,197,190,0.03)",
-                                    gap: "0.4rem",
-                                    alignItems: "center",
-                                  }}
-                                >
+                                <div key={p.id} style={{ display: "grid", gridTemplateColumns: "2fr 1.4fr 0.9fr 0.9fr 0.7fr 0.7fr 0.7fr 0.7fr 0.7fr 0.9fr", padding: "0.45rem 0.75rem", borderBottom: i < previewPings.length - 1 ? "1px solid rgba(131,197,190,0.15)" : "none", fontSize: "0.76rem", color: "#2d4a4d", background: i % 2 === 0 ? "#fff" : "rgba(131,197,190,0.03)", gap: "0.4rem", alignItems: "center" }}>
                                   <span style={{ display: "flex", alignItems: "center", gap: "0.4rem", overflow: "hidden" }}>
                                     <span style={{ width: 8, height: 8, borderRadius: "50%", background: color.stroke, flexShrink: 0 }} />
                                     <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: color.stroke, fontWeight: 600 }}>{label}</span>
@@ -919,21 +1014,16 @@ const SensorPage: React.FC = () => {
                                   <span>{p.longitude != null ? p.longitude.toFixed(4) : "—"}</span>
                                   <span style={{ color: battColor(p.batt_pct), fontWeight: 600 }}>{p.batt_pct}%</span>
                                   <span>
-                                    <span style={{
-                                      display: "inline-block",
-                                      padding: "0.1rem 0.35rem",
-                                      borderRadius: 4,
-                                      fontSize: "0.68rem",
-                                      fontWeight: 700,
-                                      background: p.fix_type >= 2 ? "rgba(46,204,113,0.12)" : "rgba(180,180,180,0.15)",
-                                      color: p.fix_type >= 2 ? "#2ecc71" : "#aaa",
-                                    }}>
+                                    <span style={{ display: "inline-block", padding: "0.1rem 0.35rem", borderRadius: 4, fontSize: "0.68rem", fontWeight: 700, background: p.fix_type >= 2 ? "rgba(46,204,113,0.12)" : "rgba(180,180,180,0.15)", color: p.fix_type >= 2 ? "#2ecc71" : "#aaa" }}>
                                       {p.fix_type >= 2 ? `${p.fix_type}D` : "—"}
                                     </span>
                                   </span>
                                   <span style={{ color: "#5a8a8f" }}>{p.altitude_m != null ? p.altitude_m.toFixed(1) : "—"}</span>
                                   <span style={{ color: "#5a8a8f" }}>{p.h_acc_m != null ? p.h_acc_m.toFixed(2) : "—"}</span>
                                   <span style={{ color: "#5a8a8f" }}>{p.speed_mps != null ? p.speed_mps.toFixed(2) : "—"}</span>
+                                  <span style={{ color: p.salinity_psu != null ? "#006d77" : "#aaa", fontWeight: p.salinity_psu != null ? 600 : 400 }}>
+                                    {p.salinity_psu != null ? p.salinity_psu.toFixed(3) : "—"}
+                                  </span>
                                 </div>
                               );
                             })

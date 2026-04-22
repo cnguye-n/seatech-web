@@ -239,18 +239,43 @@
 }
 .upload-history-turtle:hover { box-shadow: 0 4px 12px rgba(0,109,119,0.1); }
 .upload-history-turtle-header {
-  display: flex; align-items: center; gap: 0.75rem;
-  padding: 0.85rem 1.25rem; cursor: pointer;
+  display: grid;
+  grid-template-columns: 220px 1fr auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.25rem;
+  cursor: pointer;
   background: linear-gradient(135deg, rgba(131,197,190,0.06), rgba(0,109,119,0.06));
   transition: background 0.15s;
 }
 .upload-history-turtle-header:hover { background: rgba(131,197,190,0.12); }
+
+.upload-history-turtle-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  overflow: hidden;
+}
 .upload-history-turtle-dot {
   width: 14px; height: 14px; border-radius: 999px;
   border: 2px solid #006d77; flex-shrink: 0;
 }
-.upload-history-turtle-name { font-weight: 700; color: #006d77; font-size: 0.95rem; }
-.upload-history-turtle-meta { font-size: 0.8rem; color: var(--color-text-dim, #757575); margin-left: auto; }
+.upload-history-turtle-name {
+  font-weight: 700; color: #006d77; font-size: 0.95rem;
+  white-space: nowrap;
+  /* First cell after the dot — auto width, grows with content */
+}
+.upload-history-turtle-filename {
+  font-size: 0.8rem; color: var(--color-text-dim, #757575);
+  white-space: nowrap;
+  text-align: center;
+  /* Middle column — all rows share the same grid so this is always aligned */
+}
+.upload-history-turtle-meta {
+  font-size: 0.8rem; color: var(--color-text-dim, #757575);
+  white-space: nowrap; margin-left: auto;
+}
 .upload-history-chevron {
   font-size: 1rem; color: #006d77; transition: transform 0.2s;
   margin-left: 0.5rem;
@@ -304,4 +329,10 @@
   .upload-detail-grid { gap: 1rem; }
   .upload-turtle-selector { flex-direction: column; align-items: flex-start; }
   .upload-history-entry { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+}
+@media (max-width: 640px) {
+  .upload-history-turtle-header {
+    grid-template-columns: 14px 1fr auto auto;
+  }
+  .upload-history-turtle-filename { display: none; }
 }
