@@ -4,16 +4,21 @@ import './About.css';
 const API_BASE = import.meta.env.VITE_API_URL;
 
 export default function About() {
+  const token = localStorage.getItem("google_credential") || "";
   const [uniqueSensorCount, setUniqueSensorCount] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/uploads`)
+    fetch(`${API_BASE}/api/uploads`, {
+      headers: {
+        Authorization: `Bearer ${token.trim()}`,
+      },
+    })
       .then((r) => r.ok ? r.json() : [])
       .then((data: { filename: string }[]) => {
         const unique = new Set(data.map((u) => u.filename)).size;
         setUniqueSensorCount(unique);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   return (
@@ -23,8 +28,8 @@ export default function About() {
         <div className="hero-content">
           <p className="heading1">About Us</p>
           <p className="bodytext hero-text">
-            SEAtech Research Initiative is a student-led interdisciplinary team developing low-cost, open-source tools for marine wildlife tracking. Formed from a university course and now operating as an interdisciplinary campus research club, we unite CS, GIS, and marine biology students 
-            to build a complete sensor-to-map system for sea turtles in the San Andrés Archipelago. Our work focuses on expanding access to affordable telemetry 
+            SEAtech Research Initiative is a student-led interdisciplinary team developing low-cost, open-source tools for marine wildlife tracking. Formed from a university course and now operating as an interdisciplinary campus research club, we unite CS, GIS, and marine biology students
+            to build a complete sensor-to-map system for sea turtles in the San Andrés Archipelago. Our work focuses on expanding access to affordable telemetry
             and advancing geospatial intelligence for conservation.
           </p>
         </div>
@@ -35,9 +40,9 @@ export default function About() {
         <div className="container">
           {/*  group photo */}
           <div className="group-photo-container">
-            <img 
-              src="/images/Photos/group-kitten.png" 
-              alt="Team Group Photo" 
+            <img
+              src="/images/Photos/group-kitten.png"
+              alt="Team Group Photo"
               className="group-photo-image"
             />
           </div>
@@ -103,7 +108,7 @@ export default function About() {
             SEAtech Research Initiative
           </p>
 
-          
+
           {/* Computer Science / Engineering Team */}
           <div className="team-group-card">
             <h3 className="heading3 text-center">Computer Science / Engineering Team</h3>
@@ -207,7 +212,7 @@ export default function About() {
                 <h4 className="member-name">Jeslyn Martinez</h4>
                 <p className="member-role">[Secretary]</p>
               </div>
-              
+
               <div className="team-member">
                 <div className="team-photo"></div>
                 <h4 className="member-name">Lorena Robles</h4>
@@ -251,7 +256,7 @@ export default function About() {
         </div>
       </div>
 
-    
+
 
       {/* stats (?) */}
       <div className="container stats-section">
@@ -268,6 +273,6 @@ export default function About() {
           </div>
         </div>
       </div>
-   </main>
+    </main>
   );
 }

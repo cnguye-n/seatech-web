@@ -21,6 +21,7 @@ const ROLE_OPTIONS: { value: Role; label: string }[] = [
 
 const GOOGLE_TOKEN_KEY = "google_credential";
 const API_BASE = (import.meta.env.VITE_API_URL as string) ?? "";
+const token = localStorage.getItem(GOOGLE_TOKEN_KEY) || "";
 
 export default function AdminAccess() {
   const { user } = useAuth();

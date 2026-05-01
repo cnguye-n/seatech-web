@@ -170,6 +170,7 @@ function battColor(pct: number) {
 
 export default function ManagePage() {
   const { user } = useAuth();
+  const token = localStorage.getItem("google_credential") || "";
 
   // turtle metadata
   const [turtleName, setTurtleName] = useState("");
@@ -267,7 +268,10 @@ export default function ManagePage() {
         }));
         const res = await fetch(`${API_BASE}/api/pings/upload`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token.trim()}`,
+          },
           body: JSON.stringify({
             filename: fileName,
             pings: payload,
@@ -464,7 +468,7 @@ export default function ManagePage() {
                           <td>
                             {row.isDuplicate ? <span className="dup-badge">Duplicate</span>
                               : row.hasGps ? <span style={{ color: "#2ecc71", fontWeight: 600, fontSize: "0.8rem" }}>GPS ✔</span>
-                              : <span style={{ color: "#f39c12", fontWeight: 600, fontSize: "0.8rem" }}>No GPS</span>}
+                                : <span style={{ color: "#f39c12", fontWeight: 600, fontSize: "0.8rem" }}>No GPS</span>}
                           </td>
                         </tr>
                         {expandedRow === i && (

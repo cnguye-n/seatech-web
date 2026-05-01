@@ -72,6 +72,7 @@ class TrackerUpload(db.Model):
     duplicate_count = db.Column(db.Integer, nullable=False, default=0)
     uploaded_at = db.Column(db.DateTime, server_default=db.func.now())
     uploaded_by = db.Column(db.String(255), nullable=True)
+    owner_group_id = db.Column(db.BigInteger, nullable=True)
     # turtle metadata supplied at upload time
     turtle_name = db.Column(db.String(255), nullable=True)
     species = db.Column(db.String(100), nullable=True)
@@ -120,7 +121,6 @@ def get_user_from_request():
     name = payload.get("name") or payload.get("given_name") or email
     picture = payload.get("picture")
 
-    # ensure user exists + fetch role
     q = text("""
         insert into public.users (email, name, picture, last_login)
         values (:email, :name, :picture, now())
@@ -128,13 +128,23 @@ def get_user_from_request():
         set name = excluded.name,
             picture = excluded.picture,
             last_login = now()
-        returning email, name, picture, role;
+        returning email, name, picture, role, group_id;
     """)
+
     with db.engine.begin() as conn:
-        row = conn.execute(q, {"email": email, "name": name, "picture": picture}).fetchone()
+        row = conn.execute(q, {
+            "email": email,
+            "name": name,
+            "picture": picture
+        }).fetchone()
 
-    return {"email": row.email, "name": row.name, "picture": row.picture, "role": row.role}, None
-
+    return {
+        "email": row.email,
+        "name": row.name,
+        "picture": row.picture,
+        "role": row.role,
+        "group_id": row.group_id,
+    }, None
 
 def require_auth(f):
     @wraps(f)
@@ -156,6 +166,14 @@ def require_admin(f):
         return f(*args, **kwargs)
     return wrapper
 
+def require_group(f):
+    @wraps(f)
+    @require_auth
+    def wrapper(*args, **kwargs):
+        if not g.user.get("group_id"):
+            return jsonify({"error": "User is not assigned to a group"}), 403
+        return f(*args, **kwargs)
+    return wrapper
 
 # Admin Routes
 # -----------------------
@@ -182,6 +200,26 @@ def admin_list_users():
         for r in rows
     ]), 200
 
+@app.route("/api/groups", methods=["GET"])
+@require_auth
+def list_groups():
+    query = text("""
+        SELECT id, name, created_at
+        FROM public.groups
+        ORDER BY name;
+    """)
+
+    with db.engine.connect() as conn:
+        rows = conn.execute(query).fetchall()
+
+    return jsonify([
+        {
+            "id": r.id,
+            "name": r.name,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        }
+        for r in rows
+    ]), 200
 
 @app.patch("/api/admin/users/<path:email>/role")
 @require_admin
@@ -282,6 +320,7 @@ def get_pings():
 
 # upload tracker CSV pings
 @app.route("/api/pings/upload", methods=["POST"])
+@require_group
 def upload_pings():
     data = request.get_json()
     if not data or "pings" not in data:
@@ -328,6 +367,8 @@ def upload_pings():
         filename=filename,
         ping_count=len(unique_pings),
         duplicate_count=duplicate_count,
+        uploaded_by=g.user["email"],
+        owner_group_id=g.user["group_id"],
         turtle_name=turtle_name,
         species=species,
         sex=sex,
@@ -367,31 +408,75 @@ def upload_pings():
 
 # list history
 @app.route("/api/uploads", methods=["GET"])
+@require_group
 def list_uploads():
-    uploads = TrackerUpload.query.order_by(TrackerUpload.uploaded_at.desc()).limit(50).all()
+    group_id = g.user["group_id"]
+
+    query = text("""
+        SELECT
+            u.id,
+            u.filename,
+            u.ping_count,
+            u.duplicate_count,
+            u.uploaded_at,
+            u.uploaded_by,
+            u.turtle_name,
+            u.species,
+            u.sex,
+            u.island_origin,
+            u.notes,
+            u.owner_group_id,
+            CASE
+                WHEN u.owner_group_id = :group_id THEN 'owner'
+                ELSE us.permission
+            END AS access_level,
+            CASE
+                WHEN u.owner_group_id = :group_id THEN false
+                ELSE true
+            END AS is_shared
+        FROM public.tracker_uploads u
+        LEFT JOIN public.tracker_upload_shares us
+          ON us.upload_id = u.id
+         AND us.shared_with_group_id = :group_id
+        WHERE u.owner_group_id = :group_id
+           OR us.shared_with_group_id = :group_id
+        ORDER BY u.uploaded_at DESC
+        LIMIT 50;
+    """)
+
+    with db.engine.connect() as conn:
+        rows = conn.execute(query, {"group_id": group_id}).fetchall()
+
     return jsonify([
         {
-            "id": u.id,
-            "filename": u.filename,
-            "ping_count": u.ping_count,
-            "duplicate_count": u.duplicate_count,
-            "uploaded_at": u.uploaded_at.isoformat() if u.uploaded_at else None,
-            "turtle_name": u.turtle_name,
-            "species": u.species,
-            "sex": u.sex,
-            "island_origin": u.island_origin,
-            "notes": u.notes,
+            "id": r.id,
+            "filename": r.filename,
+            "ping_count": r.ping_count,
+            "duplicate_count": r.duplicate_count,
+            "uploaded_at": r.uploaded_at.isoformat() if r.uploaded_at else None,
+            "uploaded_by": r.uploaded_by,
+            "turtle_name": r.turtle_name,
+            "species": r.species,
+            "sex": r.sex,
+            "island_origin": r.island_origin,
+            "notes": r.notes,
+            "owner_group_id": r.owner_group_id,
+            "access_level": r.access_level,
+            "is_shared": r.is_shared,
         }
-        for u in uploads
+        for r in rows
     ]), 200
-
 
 # delete an upload and all its pings
 @app.route("/api/uploads/<int:upload_id>", methods=["DELETE"])
+@require_group
 def delete_upload(upload_id: int):
     upload = TrackerUpload.query.get(upload_id)
     if not upload:
         return jsonify({"error": "Upload not found"}), 404
+
+    if upload.owner_group_id != g.user["group_id"]:
+        return jsonify({"error": "Only the owner group can delete this upload"}), 403
 
     TrackerPing.query.filter_by(upload_id=upload_id).delete()
     db.session.delete(upload)
@@ -399,12 +484,123 @@ def delete_upload(upload_id: int):
 
     return jsonify({"ok": True, "deleted_id": upload_id}), 200
 
+@app.route("/api/uploads/<int:upload_id>/share", methods=["POST"])
+@require_group
+def share_upload(upload_id: int):
+    body = request.get_json() or {}
+    shared_with_group_id = body.get("group_id")
+    permission = body.get("permission", "viewer")
 
+    if not shared_with_group_id:
+        return jsonify({"error": "group_id is required"}), 400
+
+    if permission not in {"viewer", "editor"}:
+        return jsonify({"error": "Invalid permission"}), 400
+
+    with db.engine.begin() as conn:
+        upload = conn.execute(text("""
+            SELECT id, owner_group_id
+            FROM public.tracker_uploads
+            WHERE id = :upload_id
+        """), {"upload_id": upload_id}).fetchone()
+
+        if not upload:
+            return jsonify({"error": "Upload not found"}), 404
+
+        if upload.owner_group_id != g.user["group_id"]:
+            return jsonify({"error": "Only the owner group can share this upload"}), 403
+
+        if int(shared_with_group_id) == int(g.user["group_id"]):
+            return jsonify({"error": "Cannot share with the owner group"}), 400
+
+        conn.execute(text("""
+            INSERT INTO public.tracker_upload_shares (upload_id, shared_with_group_id, permission, shared_by_email)
+            VALUES (:upload_id, :shared_with_group_id, :permission, :shared_by_email)
+            ON CONFLICT (upload_id, shared_with_group_id)
+            DO UPDATE SET
+                permission = EXCLUDED.permission,
+                shared_by_email = EXCLUDED.shared_by_email,
+                created_at = now()
+        """), {
+            "upload_id": upload_id,
+            "shared_with_group_id": shared_with_group_id,
+            "permission": permission,
+            "shared_by_email": g.user["email"],
+        })
+
+    return jsonify({
+        "ok": True,
+        "upload_id": upload_id,
+        "shared_with_group_id": shared_with_group_id,
+        "permission": permission,
+    }), 200
+
+@app.route("/api/uploads/<int:upload_id>/shares", methods=["GET"])
+@require_group
+def get_upload_shares(upload_id: int):
+    with db.engine.connect() as conn:
+        upload = conn.execute(text("""
+            SELECT id, owner_group_id
+            FROM public.tracker_uploads
+            WHERE id = :upload_id
+        """), {"upload_id": upload_id}).fetchone()
+
+        if not upload:
+            return jsonify({"error": "Upload not found"}), 404
+
+        if upload.owner_group_id != g.user["group_id"]:
+            return jsonify({"error": "Only the owner group can view shares"}), 403
+
+        rows = conn.execute(text("""
+            SELECT s.shared_with_group_id, g.name AS group_name, s.permission, s.shared_by_email, s.created_at
+            FROM public.tracker_upload_shares s
+            JOIN public.groups g ON g.id = s.shared_with_group_id
+            WHERE s.upload_id = :upload_id
+            ORDER BY g.name
+        """), {"upload_id": upload_id}).fetchall()
+
+    return jsonify([
+        {
+            "group_id": r.shared_with_group_id,
+            "group_name": r.group_name,
+            "permission": r.permission,
+            "shared_by_email": r.shared_by_email,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        }
+        for r in rows
+    ]), 200
+       
 # get pings for a specific upload
 @app.route("/api/uploads/<int:upload_id>/pings", methods=["GET"])
+@require_group
 def get_upload_pings(upload_id: int):
+    group_id = g.user["group_id"]
+
+    access_query = text("""
+        SELECT u.id
+        FROM public.tracker_uploads u
+        LEFT JOIN public.tracker_upload_shares us
+          ON us.upload_id = u.id
+         AND us.shared_with_group_id = :group_id
+        WHERE u.id = :upload_id
+          AND (
+            u.owner_group_id = :group_id
+            OR us.shared_with_group_id = :group_id
+          )
+    """)
+
+    with db.engine.connect() as conn:
+        allowed = conn.execute(access_query, {
+            "upload_id": upload_id,
+            "group_id": group_id
+        }).fetchone()
+
+        if not allowed:
+            return jsonify({"error": "Forbidden"}), 403
+
     pings = TrackerPing.query.filter_by(upload_id=upload_id)\
         .order_by(TrackerPing.uptime_min).all()
+
     return jsonify([
         {
             "id": p.id,
@@ -423,7 +619,6 @@ def get_upload_pings(upload_id: int):
         }
         for p in pings
     ]), 200
-
 
 # get all tracker pings (with optional date range filter)
 @app.route("/api/tracker-pings", methods=["GET"])
@@ -466,37 +661,61 @@ def get_all_tracker_pings():
 
 # delete a single ping by ID
 @app.route("/api/tracker-pings/<int:ping_id>", methods=["DELETE"])
+@require_group
 def delete_single_ping(ping_id: int):
     ping = TrackerPing.query.get(ping_id)
     if not ping:
         return jsonify({"error": "Ping not found"}), 404
-    
+
     upload = TrackerUpload.query.get(ping.upload_id)
-    if upload and upload.ping_count > 0:
+    if not upload:
+        return jsonify({"error": "Upload not found"}), 404
+
+    if upload.owner_group_id != g.user["group_id"]:
+        return jsonify({"error": "Only the owner group can delete this ping"}), 403
+
+    if upload.ping_count and upload.ping_count > 0:
         upload.ping_count -= 1
 
     db.session.delete(ping)
     db.session.commit()
-    return jsonify({"ok": True, "deleted_id": ping_id, "Upload_id": ping.upload_id}), 200
+    return jsonify({"ok": True, "deleted_id": ping_id, "upload_id": ping.upload_id}), 200
 
 # Route for turtle path
 @app.route("/api/turtles/<int:turtle_id>/path", methods=["GET"])
+@require_auth
 def get_turtle_path(turtle_id: int):
-    """
-    returns ordered pings for a given turtle as a list of points.
-    this is what the map can use to draw a polyline.
-    """
-    query = text("""
-        SELECT p.latitude, p.longitude, p.ping_time
-        FROM pings p
-        JOIN tags t ON p.tag_id = t.id
-        JOIN turtles tu ON tu.tag_id = t.id
-        WHERE tu.id = :tid
-        ORDER BY p.ping_time;
+    group_id = g.user.get("group_id")
+
+    if not group_id:
+        return jsonify({"error": "User is not assigned to a group"}), 403
+
+    access_query = text("""
+        SELECT id
+        FROM public.turtles
+        WHERE id = :tid
+          AND owner_group_id = :group_id
     """)
 
     with db.engine.connect() as conn:
-        result = conn.execute(query, {"tid": turtle_id})
+        allowed = conn.execute(access_query, {
+            "tid": turtle_id,
+            "group_id": group_id
+        }).fetchone()
+
+        if not allowed:
+            return jsonify({"error": "Forbidden"}), 403
+
+        path_query = text("""
+            SELECT p.latitude, p.longitude, p.ping_time
+            FROM public.pings p
+            JOIN public.tags t ON p.tag_id = t.id
+            JOIN public.turtles tu ON tu.tag_id = t.id
+            WHERE tu.id = :tid
+            ORDER BY p.ping_time;
+        """)
+
+        result = conn.execute(path_query, {"tid": turtle_id})
         rows = [
             {
                 "latitude": r.latitude,
@@ -510,24 +729,35 @@ def get_turtle_path(turtle_id: int):
 
 # list turtles
 @app.route("/api/turtles", methods=["GET"])
+@require_auth
 def list_turtles():
-  query = text("""
-      SELECT id, name, species, tag_id
-      FROM turtles
-      ORDER BY id;
-  """)
-  with db.engine.connect() as conn:
-    result = conn.execute(query)
-    turtles = [
-      {
-        "id": r.id,
-        "name": r.name,
-        "species": r.species,
-        "tag_id": r.tag_id,
-      }
-      for r in result
-    ]
-  return jsonify(turtles), 200
+    group_id = g.user.get("group_id")
+
+    if not group_id:
+        return jsonify({"error": "User is not assigned to a group"}), 403
+
+    query = text("""
+        SELECT id, name, species, tag_id, owner_group_id
+        FROM public.turtles
+        WHERE owner_group_id = :group_id
+        ORDER BY id;
+    """)
+
+    with db.engine.connect() as conn:
+        result = conn.execute(query, {"group_id": group_id})
+        turtles = [
+            {
+                "id": r.id,
+                "name": r.name,
+                "species": r.species,
+                "tag_id": r.tag_id,
+                "owner_group_id": r.owner_group_id,
+                "access_level": "owner"
+            }
+            for r in result
+        ]
+
+    return jsonify(turtles), 200
 
 if __name__ == "__main__":
     print("Registered routes:", app.url_map)

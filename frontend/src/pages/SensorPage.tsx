@@ -9,6 +9,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 const API_BASE = import.meta.env.VITE_API_URL;
+const GOOGLE_TOKEN_KEY = "google_credential";
 const { BaseLayer, Overlay } = LayersControl;
 
 // ─── types ────────────────────────────────────────────────────────────────────
@@ -24,6 +25,9 @@ type UploadRecord = {
   sex: string | null;
   island_origin: string | null;
   notes: string | null;
+  owner_group_id?: number | null;
+  access_level?: "owner" | "viewer" | "editor" | string;
+  is_shared?: boolean;
 };
 
 type StoredPing = {
@@ -74,6 +78,34 @@ function formatShortTime(iso: string | null) {
   try { return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" }); } catch { return iso; }
 }
 
+function ownershipBadgeStyle(kind: "owned" | "shared"): React.CSSProperties {
+  if (kind === "owned") {
+    return {
+      display: "inline-flex",
+      alignItems: "center",
+      padding: "0.18rem 0.55rem",
+      borderRadius: "999px",
+      fontSize: "0.72rem",
+      fontWeight: 700,
+      background: "rgba(46, 204, 113, 0.14)",
+      color: "#1f8f4d",
+      border: "1px solid rgba(46, 204, 113, 0.28)",
+    };
+  }
+
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "0.18rem 0.55rem",
+    borderRadius: "999px",
+    fontSize: "0.72rem",
+    fontWeight: 700,
+    background: "rgba(69, 123, 157, 0.14)",
+    color: "#456b88",
+    border: "1px solid rgba(69, 123, 157, 0.28)",
+  };
+}
+
 function buildColorMap(uploads: UploadRecord[]): Map<string, number> {
   const map = new Map<string, number>();
   let i = 0;
@@ -110,6 +142,8 @@ const SensorPage: React.FC = () => {
   const [search, setSearch] = useState("");
   const [openSensors, setOpenSensors] = useState<Set<string>>(new Set());
   const [zoomTarget, setZoomTarget] = useState<{ name: string; trigger: number } | null>(null);
+
+  const token = useMemo(() => localStorage.getItem("google_credential") || "", []);
 
   // export state
   const defaultDateFrom = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -180,20 +214,24 @@ const SensorPage: React.FC = () => {
 
   const fetchUploads = useCallback(async () => {
     try {
-      const r = await fetch(`${API_BASE}/api/uploads`);
+      const r = await fetch(`${API_BASE}/api/uploads`, {
+        headers: {
+          Authorization: `Bearer ${token.trim()}`,
+        },
+      });
       if (r.ok) {
         const data: UploadRecord[] = await r.json();
         setUploads(data);
         setVisibleSensors(new Set(data.map((u) => u.filename)));
       }
-    } catch {}
-  }, []);
+    } catch { }
+  }, [token]);
 
   const fetchPings = useCallback(async () => {
     try {
       const r = await fetch(`${API_BASE}/api/tracker-pings`);
       if (r.ok) setPings(await r.json());
-    } catch {}
+    } catch { }
   }, []);
 
   useEffect(() => {
@@ -215,12 +253,16 @@ const SensorPage: React.FC = () => {
 
   const fetchUploadPings = async (uploadId: number) => {
     try {
-      const r = await fetch(`${API_BASE}/api/uploads/${uploadId}/pings`);
+      const r = await fetch(`${API_BASE}/api/uploads/${uploadId}/pings`, {
+        headers: {
+          Authorization: `Bearer ${token.trim()}`,
+        },
+      });
       if (r.ok) {
         const data = await r.json();
         setUploadPingsCache((prev) => new Map(prev).set(uploadId, data));
       }
-    } catch {}
+    } catch { }
   };
 
   const toggleExpandUpload = (uploadId: number) => {
@@ -236,23 +278,33 @@ const SensorPage: React.FC = () => {
     if (!window.confirm("Delete this entire upload session and all its pings?")) return;
     setDeleting(uploadId);
     try {
-      const r = await fetch(`${API_BASE}/api/uploads/${uploadId}`, { method: "DELETE" });
+      const r = await fetch(`${API_BASE}/api/uploads/${uploadId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token.trim()}`,
+        },
+      });
       if (r.ok) { await fetchUploads(); await fetchPings(); setExpandedUploadId(null); }
-    } catch {} finally { setDeleting(null); }
+    } catch { } finally { setDeleting(null); }
   };
 
   const handleDeletePing = async (pingId: number) => {
     if (!window.confirm("Delete this single ping?")) return;
     setDeletingPing(pingId);
     try {
-      const r = await fetch(`${API_BASE}/api/tracker-pings/${pingId}`, { method: "DELETE" });
+      const r = await fetch(`${API_BASE}/api/tracker-pings/${pingId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token.trim()}`,
+        },
+      });
       if (r.ok) {
         const data = await r.json();
         if (data.upload_id) fetchUploadPings(data.upload_id);
         await fetchUploads();
         await fetchPings();
       }
-    } catch {} finally { setDeletingPing(null); }
+    } catch { } finally { setDeletingPing(null); }
   };
 
   const mapGroups = useMemo(() => {
@@ -292,7 +344,7 @@ const SensorPage: React.FC = () => {
       return;
     }
 
-    const headers = ["sensor","turtle_name","recorded_at","uptime_min","latitude","longitude","altitude_m","h_acc_m","speed_mps","batt_v","batt_pct","fix_type","siv","surface_fix"];
+    const headers = ["sensor", "turtle_name", "recorded_at", "uptime_min", "latitude", "longitude", "altitude_m", "h_acc_m", "speed_mps", "batt_v", "batt_pct", "fix_type", "siv", "surface_fix"];
     const rows = filtered.map((p) => {
       const upload = uploads.find((u) => u.id === p.upload_id);
       const meta = upload ? metaByName.get(upload.filename) : null;
@@ -394,6 +446,8 @@ const SensorPage: React.FC = () => {
                   const isVisible = visibleSensors.has(name);
                   const meta = metaByName.get(name);
                   const displayName = meta?.turtle_name || name;
+                  const isShared = !!meta?.is_shared;
+                  const canDelete = meta?.access_level === "owner";
 
                   return (
                     <div
@@ -403,9 +457,17 @@ const SensorPage: React.FC = () => {
                       style={{ borderColor: isVisible ? color.stroke : "#ccc" }}
                     >
                       <div className="sensor-card-header">
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p className="sensor-title" style={{ color: color.stroke }}>{displayName}</p>
-                          <p className="sensor-id">{name !== displayName ? `${name} · ` : ""}{pingCount} ping{pingCount !== 1 ? "s" : ""}</p>
+                        <div className="sensor-card-title-wrap">
+                          <div className="sensor-card-title-row">
+                            <p className="sensor-title" style={{ color: color.stroke }}>{displayName}</p>
+                            <span className={`ownership-badge ${isShared ? "shared" : "owned"}`}>
+                              {isShared ? "Shared" : "Owned"}
+                            </span>
+                          </div>
+                          <p className="sensor-id">
+                            {name !== displayName ? `${name} · ` : ""}
+                            {pingCount} ping{pingCount !== 1 ? "s" : ""}
+                          </p>
                         </div>
                         <span style={{ fontSize: "0.7rem", color: color.stroke, transition: "transform 0.3s ease", transform: isActive ? "rotate(180deg)" : "rotate(0deg)", display: "inline-block", flexShrink: 0, marginTop: 2 }}>▼</span>
                       </div>
@@ -421,12 +483,14 @@ const SensorPage: React.FC = () => {
                                 meta.sex && meta.sex !== "Unknown" && ["Sex", meta.sex],
                                 meta.island_origin && meta.island_origin !== "Unknown" && ["Island", meta.island_origin],
                                 meta.notes && ["Notes", meta.notes],
-                              ].filter(Boolean).map((item) => { const [label, value] = item as [string, string]; return (
-                                <div key={label as string} style={{ display: "flex", gap: "0.5rem", alignItems: "baseline", fontSize: "0.83rem", marginBottom: "0.2rem" }}>
-                                  <span style={{ color: "#8aa8ab", fontWeight: 600, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", minWidth: 52, flexShrink: 0 }}>{label}</span>
-                                  <span style={{ color: "#2d4a4d", fontWeight: 500 }}>{value}</span>
-                                </div>
-                              ); })}
+                              ].filter(Boolean).map((item) => {
+                                const [label, value] = item as [string, string]; return (
+                                  <div key={label as string} style={{ display: "flex", gap: "0.5rem", alignItems: "baseline", fontSize: "0.83rem", marginBottom: "0.2rem" }}>
+                                    <span style={{ color: "#8aa8ab", fontWeight: 600, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em", minWidth: 52, flexShrink: 0 }}>{label}</span>
+                                    <span style={{ color: "#2d4a4d", fontWeight: 500 }}>{value}</span>
+                                  </div>
+                                );
+                              })}
                             </div>
                           )}
 
@@ -666,21 +730,31 @@ const SensorPage: React.FC = () => {
                             return (
                               <div key={u.id}>
                                 <div className="upload-history-entry">
-                                  <div className="upload-history-entry-info" onClick={() => toggleExpandUpload(u.id)} style={{ cursor: "pointer", flex: 1 }}>
+                                  <div
+                                    className="upload-history-entry-info upload-history-entry-info-rich"
+                                    onClick={() => toggleExpandUpload(u.id)}
+                                  >
                                     <span className={`upload-history-entry-chevron ${isUploadExpanded ? "open" : ""}`}>▸</span>
                                     <span className="upload-history-entry-id">#{u.id}</span>
                                     <span>{u.ping_count} pings</span>
+                                    <span className={`ownership-badge ${u.is_shared ? "shared" : "owned"}`}>
+                                      {u.is_shared ? "Shared" : "Owned"}
+                                    </span>
                                     {u.duplicate_count > 0 && <span className="upload-history-entry-dupes">{u.duplicate_count} dupes skipped</span>}
                                     <span className="upload-history-entry-date">{formatDate(u.uploaded_at)}</span>
                                   </div>
-                                  <button
-                                    className="upload-btn-delete"
-                                    onClick={() => handleDeleteUpload(u.id)}
-                                    disabled={deleting === u.id}
-                                    title="Delete entire upload session and all its pings"
-                                  >
-                                    {deleting === u.id ? "…" : "Delete All"}
-                                  </button>
+
+                                  {u.access_level === "owner" && (
+                                    <button
+                                      className="upload-btn-delete"
+                                      onClick={() => handleDeleteUpload(u.id)}
+                                      disabled={deleting === u.id}
+                                      title="Delete entire upload session and all its pings"
+                                    >
+                                      {deleting === u.id ? "…" : "Delete All"}
+                                    </button>
+                                  )}
+                                  
                                 </div>
 
                                 {isUploadExpanded && (
@@ -692,14 +766,16 @@ const SensorPage: React.FC = () => {
                                         <div className="upload-history-ping-row" key={p.id} style={{ flexDirection: "column", alignItems: "flex-start", gap: "0.4rem", padding: "0.6rem 0.75rem" }}>
                                           <div style={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center" }}>
                                             <span className="upload-history-ping-num" style={{ fontWeight: 700 }}>#{pi + 1} &nbsp;<span style={{ color: "#999", fontWeight: 400, fontSize: "0.8rem" }}>{formatDate(p.recorded_at)}</span></span>
-                                            <button
-                                              className="upload-btn-delete-sm"
-                                              onClick={() => handleDeletePing(p.id)}
-                                              disabled={deletingPing === p.id}
-                                              title="Delete this single ping"
-                                            >
-                                              {deletingPing === p.id ? "…" : "✕"}
-                                            </button>
+                                            {u.access_level === "owner" && (
+                                              <button
+                                                className="upload-btn-delete-sm"
+                                                onClick={() => handleDeletePing(p.id)}
+                                                disabled={deletingPing === p.id}
+                                                title="Delete this single ping"
+                                              >
+                                                {deletingPing === p.id ? "…" : "✕"}
+                                              </button>
+                                            )}
                                           </div>
                                           <div style={{ display: "grid", gridTemplateColumns: "max-content 1fr max-content 1fr", gap: "0.2rem 1.2rem", fontSize: "0.82rem", width: "100%" }}>
                                             <span style={{ color: "#888" }}>Position</span>
